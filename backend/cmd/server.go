@@ -1,12 +1,14 @@
 /*
 Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-
 */
 package cmd
 
 import (
+	"context"
 	"fmt"
-
+	"os"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -21,7 +23,17 @@ Cobra is a CLI library for Go that empowers applications.
 This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("server called")
+		err := internal.LoadEnv(".env")
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
+		}
+
+		ctx := context.Background()
+		if err := api.Run(ctx, os.Getenv); err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err)
+			os.Exit(1)
+		}
 	},
 }
 

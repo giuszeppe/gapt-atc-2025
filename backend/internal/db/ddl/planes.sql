@@ -1,0 +1,5 @@
+DROP TABLE planes;
+
+CREATE TABLE IF NOT EXISTS planes (
+    id INTEGER
+)

@@ -1,14 +1,17 @@
-import './assets/main.css'
+import './assets/main.less';
 
-import { createApp } from 'vue'
-import { createPinia } from 'pinia'
+import { createApp } from 'vue';
+import { createPinia } from 'pinia';
 
-import App from './App.vue'
-import router from './router/router'
+import App from './App.vue';
+import router from './router/router';
 
-const app = createApp(App)
+import { FontAwesomeIcon } from './fontawesome.ts';
 
-app.use(createPinia())
-app.use(router)
+const app = createApp(App);
 
-app.mount('#app')
+app.component('font-awesome-icon', FontAwesomeIcon);
+app.use(createPinia());
+app.use(router);
+
+app.mount('#app');

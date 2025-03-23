@@ -1,13 +1,9 @@
 <template>
-  <selection-card :title="'speech'" :icon="'microphone'" />
-  <selection-card :title="'speech'" :icon="'microphone'" />
-  <selection-card :title="'speech'" :icon="'microphone'" />
+  <div>
+    <selection-container v-if="currentStep < steps.length" :selection-item="steps[currentStep]"
+      @selectionConfirmed="handleSelection"></selection-container>
+  </div>
 </template>
 
-<script setup lang="ts">
-
-import SelectionCard from '@/components/SelectionCard.vue';
-
+<script lang="ts" src="./Index.ts">
 </script>
-
-<style scoped lang="less"></style>

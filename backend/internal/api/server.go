@@ -5,21 +5,23 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 )
 
 func NewServer(
 	logger *slog.Logger,
+	tokenStore stores.Store[string],
+	userStore *stores.UserStore,
 	// config *Config,
-	//
-	//	anotherStore *anotherStore,
 ) http.Handler {
 	mux := http.NewServeMux()
 	addRoutes(
 		mux,
 		logger,
+		tokenStore,
+		*userStore,
 		// Config,
-		// commentStore,
-		// anotherStore,
 	)
 	var handler http.Handler = mux
 	return handler
@@ -28,9 +30,11 @@ func NewServer(
 func Run(
 	ctx context.Context,
 	getenv func(string) string,
+	tokenStore stores.Store[string],
+	userStore *stores.UserStore,
 ) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	srv := NewServer(logger)
+	srv := NewServer(logger,tokenStore,userStore)
 
 	logger.Info("Serving on" + getenv("APP_URL"))
 	http.ListenAndServe(getenv("APP_URL"), srv)

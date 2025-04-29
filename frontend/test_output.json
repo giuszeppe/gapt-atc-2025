@@ -1,0 +1,49 @@
+{
+  "simulations": [
+    {
+      "name": "Takeoff Simulation - Malta Airport (ICAO Phraseology Ryanair)",
+      "steps": [
+        {
+          "index": 1,
+          "role": "aircraft",
+          "text": "Malta Ground, RYR4735, request taxi to runway 31, Stand 4."
+        },
+        {
+          "index": 2,
+          "role": "tower",
+          "text": "RYR4735, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1."
+        },
+        {
+          "index": 3,
+          "role": "aircraft",
+          "text": "Malta Tower, RYR4735, holding short runway 31 at C1, ready for departure."
+        },
+        {
+          "index": 4,
+          "role": "tower",
+          "text": "RYR4735, roger, runway 31 cleared for takeoff."
+        },
+        {
+          "index": 5,
+          "role": "aircraft",
+          "text": "Cleared for takeoff runway 31, RYR4735."
+        },
+        {
+          "index": 6,
+          "role": "aircraft",
+          "text": "Malta Tower, RYR4735, airborne, passing 1000 feet."
+        },
+        {
+          "index": 7,
+          "role": "tower",
+          "text": "RYR4735, roger, contact Malta Radar on 128.15."
+        },
+        {
+          "index": 8,
+          "role": "aircraft",
+          "text": "Malta Radar, RYR4735, climbing passing 1500 feet."
+        }
+      ]
+    }
+  ]
+}

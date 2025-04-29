@@ -1,5 +1,5 @@
 <template>
-  <div class="selection-card" :class="{ selected: isSelected }" @click="select">
+  <div class="selection-card" @click="select">
     <div class="icon">
       <font-awesome-icon :icon="`fa-solid fa-${icon}`" />
     </div>
@@ -29,12 +29,6 @@
     height: 60%;
     width: 100%;
     font-size: 72px;
-  }
-
-  &.selected {
-    border-color: white;
-    color: white;
-    font-weight: bold;
   }
 
   &:hover {

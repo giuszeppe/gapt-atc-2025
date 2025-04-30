@@ -1,8 +1,7 @@
 
 import { defineComponent, ref, computed, reactive, watch } from "vue";
-
 import SelectionContainer from "../components/SelectionContainer.vue";
-import { AdvancementType, InputType, Mode, Role, Scenario, type SelectionItem } from "@/@types/types";
+import { type SelectionItem, type Role, type InputType } from "@/@types/types";
 import router from "@/router/router";
 import { useStore } from "@/store/store";
 
@@ -14,38 +13,38 @@ export default defineComponent({
       {
         title: "input type",
         options: [
-          { title: "block", icon: "trowel-bricks", value: InputType.Block },
-          { title: "text", icon: "comments", value: InputType.Text },
-          { title: "speech", icon: "microphone", value: InputType.Speech },
+          { title: "block", icon: "trowel-bricks" },
+          { title: "text", icon: "comments" },
+          { title: "speech", icon: "microphone" },
         ],
       },
       {
         title: "scenario",
         options: [
-          { title: "takeoff", icon: "plane-departure", value: Scenario.Takeoff },
-          { title: "enroute", icon: "plane", value: Scenario.Enroute },
-          { title: "landing", icon: "plane-arrival", value: Scenario.Landing },
+          { title: "takeoff", icon: "plane-departure" },
+          { title: "enroute", icon: "plane" },
+          { title: "landing", icon: "plane-arrival" },
         ],
       },
       {
         title: "role",
         options: [
-          { title: "aircraft", icon: "plane", value: Role.Aircraft },
-          { title: "tower", icon: "tower-observation", value: Role.Tower },
+          { title: "aircraft", icon: "plane" },
+          { title: "tower", icon: "tower-observation" },
         ],
       },
       {
         title: "mode",
         options: [
-          { title: "singleplayer", icon: "user", value: Mode.Singleplayer },
-          { title: "multiplayer", icon: "user-group", value: Mode.Multiplayer },
+          { title: "singleplayer", icon: "user" },
+          { title: "multiplayer", icon: "user-group" },
         ],
       },
       {
         title: "simulation advancement type",
         options: [
-          { title: "continuous", icon: "repeat", value: AdvancementType.Continuous },
-          { title: "click to step", icon: "forward-step", value: AdvancementType.ClickToStep },
+          { title: "continuous", icon: "repeat" },
+          { title: "click to step", icon: "forward-step" },
         ],
       },
     ]);

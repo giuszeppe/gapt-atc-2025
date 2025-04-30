@@ -1,43 +1,23 @@
 export interface SelectionItem {
     title: string;
-    options: { title: string; icon: string; value: Mode | AdvancementType | InputType | Scenario | Role }[];
+    options: { title: string; icon: string; }[];
 }
 
 export interface SimulationStep {
-    role: "aircraft" | "tower",
+    role: Role,
     text: string,
     index: number,
 }
 
 export interface ChatMessage {
-    role: "aircraft" | "tower";
+    role: Role;
     text: string;
     formattedText?: string;
 }
 
-export enum Mode {
-    Singleplayer = "singleplayer",
-    Multiplayer = "multiplayer",
-}
 
-export enum AdvancementType {
-    Continuous = "continuous",
-    ClickToStep = "click to step",
-}
 
-export enum InputType {
-    Block = "block",
-    Text = "text",
-    Speech = "speech",
-}
 
-export enum Scenario {
-    Takeoff = "takeoff",
-    Enroute = "enroute",
-    Landing = "landing",
-}
+export type InputType = "block" | "text" | "speech";
 
-export enum Role {
-    Aircraft = "aircraft",
-    Tower = "tower",
-}
+export type Role = "aircraft" | "tower";

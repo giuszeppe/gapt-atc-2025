@@ -11,15 +11,13 @@ export default defineComponent({
 		const playerInput = ref<string>("");
 
 		const store = useStore();
-		// const userRole = store.userRole;
-		const userRole = "aircraft"; // testing
+		const userRole = store.userRole;
 		const inputType = store.inputType;
 
 		const currentStepIndex = ref<number>(0);
 		const isUserTurn = ref<boolean>(true);
 
 		onMounted(async () => {
-
 			const scenarioJson = await fetch("/test.json");
 			const scenarioData = await scenarioJson.json();
 			rightPanelSteps.value = scenarioData.simulations[0].steps;
@@ -76,45 +74,34 @@ export default defineComponent({
 			let formattedText = "";
 			let expectedIndex = 0;
 
-			for (let i = 0; i < userWords.length; i++) {
-				const userWord = userWords[i];
+			userWords.forEach((userWord) => {
+				let matched = false;
 
-				if (expectedIndex >= expectedWords.length) {
+				// Limit lookahead to 3 expected words ahead
+				for (let i = expectedIndex; i < Math.min(expectedWords.length, expectedIndex + 3); i++) {
+					const expectedWord = expectedWords[i];
+
+					if (
+						normalizeWord(userWord) === normalizeWord(expectedWord) ||
+						levenshteinDistance(userWord, expectedWord) <= 1
+					) {
+						formattedText += `${userWord} `;
+						expectedIndex = i + 1; // move expected pointer forward
+						matched = true;
+						break;
+					}
+				}
+
+				if (!matched) {
 					formattedText += `<span class="wrong-word">${userWord}</span> `;
-					continue;
 				}
-
-				const expectedWord = expectedWords[expectedIndex];
-
-				if (normalizeWord(userWord) === normalizeWord(expectedWord)) {
-					formattedText += `${userWord} `;
-					expectedIndex++;
-				} else if (levenshteinDistance(normalizeWord(userWord), normalizeWord(expectedWord)) <= 2) {
-					formattedText += `${userWord} `;
-					expectedIndex++;
-				} else {
-					let found = false;
-					for (let lookahead = 1; lookahead <= 3; lookahead++) {
-						const nextExpected = expectedWords[expectedIndex + lookahead];
-						if (nextExpected && normalizeWord(userWord) === normalizeWord(nextExpected)) {
-							expectedIndex += lookahead + 1;
-							formattedText += `${userWord} `;
-							found = true;
-							break;
-						}
-					}
-
-					if (!found) {
-						formattedText += `<span class="wrong-word">${userWord}</span> `;
-					}
-				}
-			}
+			});
 
 			return formattedText.trim();
 		}
 
 		function normalizeWord(word: string): string {
-			return word.replace(/[.,]/g, "").toLowerCase();
+			return word.replace(/[.,]/g, "").toLowerCase(); // strips punctuation and lowercases
 		}
 
 		function levenshteinDistance(a: string, b: string): number {
@@ -133,9 +120,9 @@ export default defineComponent({
 						matrix[i][j] = matrix[i - 1][j - 1];
 					} else {
 						matrix[i][j] = Math.min(
-							matrix[i - 1][j - 1] + 1,
-							matrix[i][j - 1] + 1,
-							matrix[i - 1][j] + 1
+							matrix[i - 1][j - 1] + 1, // substitution
+							matrix[i][j - 1] + 1,     // insertion
+							matrix[i - 1][j] + 1      // deletion
 						);
 					}
 				}
@@ -143,6 +130,7 @@ export default defineComponent({
 
 			return matrix[b.length][a.length];
 		}
+
 
 		return {
 			rightPanelSteps,
@@ -152,7 +140,6 @@ export default defineComponent({
 			userRole,
 			inputType,
 			handlePlayerInput,
-
 		};
 	},
 });

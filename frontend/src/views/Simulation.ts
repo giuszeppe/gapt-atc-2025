@@ -17,10 +17,14 @@ export default defineComponent({
 		const currentStepIndex = ref<number>(0);
 		const isUserTurn = ref<boolean>(true);
 
+		const synonyms = ref<Record<string, string[]>>({});
+
 		onMounted(async () => {
 			const scenarioJson = await fetch("/test.json");
 			const scenarioData = await scenarioJson.json();
 			rightPanelSteps.value = scenarioData.simulations[0].steps;
+			synonyms.value = scenarioData.synonyms || {};
+			console.log(synonyms.value);
 
 			const chatJson = await fetch("/test_output.json");
 			const chatData = await chatJson.json();
@@ -28,6 +32,7 @@ export default defineComponent({
 
 			autoRespond();
 		});
+
 
 		const handlePlayerInput = () => {
 			const step = testOutputSteps.value[currentStepIndex.value];
@@ -77,16 +82,20 @@ export default defineComponent({
 			userWords.forEach((userWord) => {
 				let matched = false;
 
-				// Limit lookahead to 3 expected words ahead
-				for (let i = expectedIndex; i < Math.min(expectedWords.length, expectedIndex + 3); i++) {
-					const expectedWord = expectedWords[i];
+				const normalizedUserWord = normalizeWord(userWord);
 
+				for (let i = expectedIndex; i < Math.min(expectedWords.length, expectedIndex + 3); i++) {
+					const expectedWord = normalizeWord(expectedWords[i]);
+
+					const synonymsList = synonyms.value[expectedWord] || [];
+					console.log(`Synonyms for ${expectedWord}:`, synonymsList);
 					if (
-						normalizeWord(userWord) === normalizeWord(expectedWord) ||
-						levenshteinDistance(userWord, expectedWord) <= 1
+						normalizedUserWord === expectedWord ||
+						synonymsList.includes(normalizedUserWord) ||
+						levenshteinDistance(normalizedUserWord, expectedWord) <= 1
 					) {
 						formattedText += `${userWord} `;
-						expectedIndex = i + 1; // move expected pointer forward
+						expectedIndex = i + 1;
 						matched = true;
 						break;
 					}
@@ -100,8 +109,9 @@ export default defineComponent({
 			return formattedText.trim();
 		}
 
+
 		function normalizeWord(word: string): string {
-			return word.replace(/[.,]/g, "").toLowerCase(); // strips punctuation and lowercases
+			return word.replace(/[.,]/g, "").toLowerCase();
 		}
 
 		function levenshteinDistance(a: string, b: string): number {
@@ -120,9 +130,9 @@ export default defineComponent({
 						matrix[i][j] = matrix[i - 1][j - 1];
 					} else {
 						matrix[i][j] = Math.min(
-							matrix[i - 1][j - 1] + 1, // substitution
-							matrix[i][j - 1] + 1,     // insertion
-							matrix[i - 1][j] + 1      // deletion
+							matrix[i - 1][j - 1] + 1,
+							matrix[i][j - 1] + 1,
+							matrix[i - 1][j] + 1
 						);
 					}
 				}

@@ -1,4 +1,11 @@
 {
+  "synonyms": {
+    "roger": ["wilco", "affirmative"],
+    "ryr4735": ["ryanair4735", "ryr 4735", "ryr-4735"],
+    "cleared": ["authorised", "approved"],
+    "tower": ["control"], 
+    "feet": ["ft"]
+  },
   "simulations": [
     {
       "name": "Takeoff Simulation - Malta Airport (Discoursive Ryanair)",

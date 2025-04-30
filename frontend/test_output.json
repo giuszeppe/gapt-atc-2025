@@ -1,7 +1,7 @@
 {
   "simulations": [
     {
-      "name": "Takeoff Simulation - Malta Airport (ICAO Phraseology Ryanair)",
+      "name": "Takeoff Simulation",
       "steps": [
         {
           "index": 1,

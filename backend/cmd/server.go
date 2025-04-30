@@ -5,9 +5,13 @@ package cmd
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
+	"log"
 	"os"
+
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/api"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +27,16 @@ This application is a tool to generate the needed files
 to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := context.Background()
-		if err := api.Run(ctx, os.Getenv); err != nil {
+
+		db, err := sql.Open("sqlite3", "example.db")
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer db.Close()
+
+		tokenStore := stores.NewMemoryStore[string]()
+		userStore := stores.NewUserStore(db)
+		if err := api.Run(ctx, os.Getenv, tokenStore, userStore); err != nil {
 			fmt.Fprintf(os.Stderr, "%s\n", err)
 			os.Exit(1)
 		}

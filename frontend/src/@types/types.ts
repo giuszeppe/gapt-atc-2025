@@ -15,9 +15,6 @@ export interface ChatMessage {
     formattedText?: string;
 }
 
-
-
-
 export type InputType = "block" | "text" | "speech";
 
 export type Role = "aircraft" | "tower";

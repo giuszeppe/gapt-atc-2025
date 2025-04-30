@@ -4,8 +4,7 @@
 
     <div class="selections">
       <selection-card v-for="option in selectionItem.options" :key="option.title" :title="option.title"
-        :value="option.value" :icon="option.icon" :isSelected="selected === option.title"
-        @select="handleSelection"></selection-card>
+        :icon="option.icon" :isSelected="selected === option.title" @select="handleSelection"></selection-card>
     </div>
   </div>
 </template>

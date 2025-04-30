@@ -1,5 +1,5 @@
 
-import { defineComponent, ref, computed, reactive, watch } from "vue";
+import { defineComponent, ref, computed, reactive, watch, onMounted } from "vue";
 import SelectionContainer from "../components/SelectionContainer.vue";
 import { type SelectionItem, type Role, type InputType } from "@/@types/types";
 import router from "@/router/router";
@@ -58,6 +58,12 @@ export default defineComponent({
         currentStep.value++;
       }
     };
+
+    onMounted(() => {
+      const store = useStore();
+      store.inputType = null;
+      store.userRole = null;
+    });
 
     const isComplete = computed(() => selections.value.length === steps.length);
 

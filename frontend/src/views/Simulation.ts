@@ -1,10 +1,15 @@
 import { defineComponent, onMounted, ref } from "vue";
 import type { ChatMessage, SimulationStep } from "@/@types/types";
 import { useStore } from "@/store/store";
+import { useSpeechToText } from "@/composables/useSpeechToText";
+import VoiceVisualizer from "@/components/VoiceVisualizer.vue";
 
 export default defineComponent({
   name: "Simulation",
+  components: { VoiceVisualizer },
   setup() {
+    const { transcript, isListening, volume, start, stop } = useSpeechToText();
+
     const rightPanelSteps = ref<SimulationStep[]>([]);
     const testOutputSteps = ref<SimulationStep[]>([]);
     const leftPanelMessages = ref<ChatMessage[]>([]);
@@ -56,10 +61,7 @@ export default defineComponent({
     };
 
     function autoRespond() {
-      while (
-        testOutputSteps.value[currentStepIndex.value] &&
-        testOutputSteps.value[currentStepIndex.value].role !== userRole
-      ) {
+      while (testOutputSteps.value[currentStepIndex.value] && testOutputSteps.value[currentStepIndex.value].role !== userRole) {
         const step = testOutputSteps.value[currentStepIndex.value];
         leftPanelMessages.value.push({
           role: step.role,
@@ -75,10 +77,9 @@ export default defineComponent({
       const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
       const synonymsMap = synonyms.value;
 
-      // Split user input, but allow us to look ahead for multi-word synonyms
       const rawWords = userInput.trim().split(/\s+/);
       const normalizedWords: string[] = [];
-      const originalWords: string[] = []; // For preserving original casing
+      const originalWords: string[] = [];
 
       for (let i = 0; i < rawWords.length; i++) {
         const oneWord = normalizeWord(rawWords[i]);
@@ -90,9 +91,6 @@ export default defineComponent({
           ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`)
           : null;
 
-        let matched = false;
-
-        // Try to match three-word phrases
         if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
           normalizedWords.push(threeWord);
           originalWords.push(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`);
@@ -100,7 +98,6 @@ export default defineComponent({
           continue;
         }
 
-        // Try to match two-word phrases
         if (twoWord && matchesAnySynonym(twoWord, synonymsMap)) {
           normalizedWords.push(twoWord);
           originalWords.push(`${rawWords[i]} ${rawWords[i + 1]}`);
@@ -108,7 +105,6 @@ export default defineComponent({
           continue;
         }
 
-        // Fallback to single word
         normalizedWords.push(oneWord);
         originalWords.push(rawWords[i]);
       }
@@ -125,11 +121,7 @@ export default defineComponent({
           const expected = expectedWords[j];
           const expectedSynonyms = synonymsMap[expected] || [];
 
-          if (
-            userWord === expected ||
-            expectedSynonyms.includes(userWord) ||
-            levenshteinDistance(userWord, expected) <= 1
-          ) {
+          if (userWord === expected || expectedSynonyms.includes(userWord) || levenshteinDistance(userWord, expected) <= 1) {
             formattedText += `${original} `;
             expectedIndex = j + 1;
             matched = true;
@@ -150,6 +142,16 @@ export default defineComponent({
         if (synonymsMap[key].includes(phrase)) return true;
       }
       return false;
+    }
+
+    function toggleListening() {
+      if (isListening.value) {
+        stop(() => {
+          playerInput.value = transcript.value.trim();
+        });
+      } else {
+        start();
+      }
     }
 
 
@@ -180,10 +182,8 @@ export default defineComponent({
           }
         }
       }
-
       return matrix[b.length][a.length];
     }
-
 
     return {
       rightPanelSteps,
@@ -192,6 +192,10 @@ export default defineComponent({
       isUserTurn,
       userRole,
       inputType,
+      isListening,
+      transcript,
+      volume,
+      toggleListening,
       handlePlayerInput,
     };
   },

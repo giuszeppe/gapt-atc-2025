@@ -3,6 +3,12 @@ export interface SelectionItem {
     options: { title: string; icon: string; }[];
 }
 
+export interface SimulationItem {
+    name: string,
+    index: number,
+    steps: SimulationStep[],
+}
+
 export interface SimulationStep {
     role: Role,
     text: string,

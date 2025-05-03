@@ -1,7 +1,7 @@
 
 import { defineComponent, ref, computed, reactive, watch, onMounted } from "vue";
 import SelectionContainer from "../components/SelectionContainer.vue";
-import { type SelectionItem, type Role, type InputType } from "@/@types/types";
+import { type SelectionItem, type Role, type InputType, type SimulationItem } from "@/@types/types";
 import router from "@/router/router";
 import { useStore } from "@/store/store";
 
@@ -27,17 +27,14 @@ export default defineComponent({
         ],
       },
       {
+        title: "simulation",
+        options: [],
+      },
+      {
         title: "role",
         options: [
           { title: "aircraft", icon: "plane" },
           { title: "tower", icon: "tower-observation" },
-        ],
-      },
-      {
-        title: "mode",
-        options: [
-          { title: "singleplayer", icon: "user" },
-          { title: "multiplayer", icon: "user-group" },
         ],
       },
       {
@@ -47,17 +44,37 @@ export default defineComponent({
           { title: "click to step", icon: "forward-step" },
         ],
       },
+      {
+        title: "mode",
+        options: [
+          { title: "singleplayer", icon: "user" },
+          { title: "multiplayer", icon: "user-group" },
+        ],
+      },
     ]);
 
     const selections = ref<string[]>([]);
     const currentStep = ref(0);
 
-    function handleSelection(value: string) {
+    async function handleSelection(value: string) {
       selections.value[currentStep.value] = value;
+      if (steps[currentStep.value].title === "scenario") {
+        const scenariosList = await loadScenarios(value);
+        const simulationStep = steps.find(step => step.title === "simulation");
+        if (simulationStep) {
+          simulationStep.options = scenariosList.map((name: string) => ({ title: name, icon: "circle-play" }));
+        }
+      }
       if (currentStep.value < steps.length - 1) {
         currentStep.value++;
       }
     };
+
+    async function loadScenarios(value: string) {
+      const scenarioJson = await fetch("/test.json");
+      const scenarioData = await scenarioJson.json();
+      return scenarioData.simulations[value].map((simulation: SimulationItem) => simulation.name);
+    }
 
     onMounted(() => {
       const store = useStore();
@@ -70,7 +87,7 @@ export default defineComponent({
     watch(isComplete, () => {
       const store = useStore();
       store.inputType = selections.value[0] as InputType;
-      store.userRole = selections.value[2] as Role;
+      store.userRole = selections.value[3] as Role;
       router.push({ name: "simulation" });
     })
 

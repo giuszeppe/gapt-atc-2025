@@ -1,56 +1,61 @@
 {
   "synonyms": {
     "roger": ["wilco", "affirmative"],
-    "ryr4735": ["ryanair4735", "ryr 4735", "ryr-4735"],
+    "ryr4735": ["ryanair4735", "ryr 4735", "ryr-4735", "ryanair 4735"],
     "cleared": ["authorised", "approved"],
-    "tower": ["control"], 
+    "tower": ["control"],
     "feet": ["ft"]
   },
-  "simulations": [
-    {
-      "name": "Takeoff Simulation - Malta Airport (Discoursive Ryanair)",
-      "steps": [
-        {
-          "index": 1,
-          "role": "aircraft",
-          "text": "The pilot of RYR4735, a Boeing 737-800 at Stand 4, requests taxi clearance to runway 31."
-        },
-        {
-          "index": 2,
-          "role": "tower",
-          "text": "Ground control instructs RYR4735 to taxi to holding point C1 via taxiways Alpha and Charlie, and advises to contact Tower on 118.3 when reaching C1."
-        },
-        {
-          "index": 3,
-          "role": "aircraft",
-          "text": "Upon reaching C1, the pilot switches to Malta Tower frequency and reports holding short runway 31, ready for departure."
-        },
-        {
-          "index": 4,
-          "role": "tower",
-          "text": "Tower acknowledges RYR4735, and provides takeoff clearance."
-        },
-        {
-          "index": 5,
-          "role": "aircraft",
-          "text": "The pilot reads back the takeoff clearance, lines up, and commences the takeoff roll on runway 31."
-        },
-        {
-          "index": 6,
-          "role": "aircraft",
-          "text": "After becoming airborne, the pilot reports to Tower: RYR4735 is airborne, passing 1000 feet."
-        },
-        {
-          "index": 7,
-          "role": "tower",
-          "text": "Tower acknowledges the airborne report and instructs RYR4735 to contact Malta Radar on 128.15."
-        },
-        {
-          "index": 8,
-          "role": "aircraft",
-          "text": "The pilot switches to Malta Radar and reports climbing through 1500 feet."
-        }
-      ]
-    }
-  ]
+  "simulations": {
+    "takeoff": [
+      {
+        "name": "takeoff simulation - test",
+        "index": 1,
+        "steps": [
+          {
+            "index": 1,
+            "role": "aircraft",
+            "text": "The pilot of RYR4735, a Boeing 737-800 at Stand 4, requests taxi clearance to runway 31."
+          },
+          {
+            "index": 2,
+            "role": "tower",
+            "text": "Ground control instructs RYR4735 to taxi to holding point C1 via taxiways Alpha and Charlie, and advises to contact Tower on 118.3 when reaching C1."
+          },
+          {
+            "index": 3,
+            "role": "aircraft",
+            "text": "Upon reaching C1, the pilot switches to Malta Tower frequency and reports holding short runway 31, ready for departure."
+          },
+          {
+            "index": 4,
+            "role": "tower",
+            "text": "Tower acknowledges RYR4735, and provides takeoff clearance."
+          },
+          {
+            "index": 5,
+            "role": "aircraft",
+            "text": "The pilot reads back the takeoff clearance, lines up, and commences the takeoff roll on runway 31."
+          },
+          {
+            "index": 6,
+            "role": "aircraft",
+            "text": "After becoming airborne, the pilot reports to Tower: RYR4735 is airborne, passing 1000 feet."
+          },
+          {
+            "index": 7,
+            "role": "tower",
+            "text": "Tower acknowledges the airborne report and instructs RYR4735 to contact Malta Radar on 128.15."
+          },
+          {
+            "index": 8,
+            "role": "aircraft",
+            "text": "The pilot switches to Malta Radar and reports climbing through 1500 feet."
+          }
+        ]
+      }
+    ],
+    "enroute": [],
+    "landing": []
+  }
 }

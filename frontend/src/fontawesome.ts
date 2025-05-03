@@ -1,6 +1,6 @@
 import { library } from '@fortawesome/fontawesome-svg-core';
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome';
-import { faTrowelBricks, faComments, faMicrophone, faPlaneDeparture, faPlaneArrival, faPlane, faTowerObservation, faUser, faUserGroup, faRepeat, faForwardStep } from '@fortawesome/free-solid-svg-icons';
+import { faTrowelBricks, faComments, faMicrophone, faPlaneDeparture, faPlaneArrival, faPlane, faTowerObservation, faUser, faUserGroup, faRepeat, faForwardStep, faCirclePlay } from '@fortawesome/free-solid-svg-icons';
 
 library.add(
     faTrowelBricks,
@@ -14,6 +14,7 @@ library.add(
     faUserGroup,
     faRepeat,
     faForwardStep,
+    faCirclePlay,
 );
 
 export { FontAwesomeIcon };

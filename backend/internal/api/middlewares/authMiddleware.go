@@ -12,7 +12,7 @@ func Auth(h http.Handler, tokenStore stores.Store[string]) http.Handler {
 		v := r.Header.Get("Authorization")
 		exists, _ := tokenStore.Exist(v)
 		if !exists {
-            encoder.EncodeError(w, http.StatusUnauthorized, nil, "User not authorized")
+			encoder.EncodeError(w, http.StatusUnauthorized, nil, "User not authorized")
 			return
 		}
 		h.ServeHTTP(w, r)

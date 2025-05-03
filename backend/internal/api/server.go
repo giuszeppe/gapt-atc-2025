@@ -13,6 +13,7 @@ func NewServer(
 	logger *slog.Logger,
 	tokenStore stores.Store[string],
 	userStore *stores.UserStore,
+	scenarioStore *stores.ScenarioStore,
 	// config *Config,
 ) http.Handler {
 	mux := http.NewServeMux()
@@ -21,6 +22,7 @@ func NewServer(
 		logger,
 		tokenStore,
 		*userStore,
+		*scenarioStore,
 		// Config,
 	)
 	var handler http.Handler = mux
@@ -32,9 +34,10 @@ func Run(
 	getenv func(string) string,
 	tokenStore stores.Store[string],
 	userStore *stores.UserStore,
+	scenarioStore *stores.ScenarioStore,
 ) error {
 	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
-	srv := NewServer(logger,tokenStore,userStore)
+	srv := NewServer(logger, tokenStore, userStore, scenarioStore)
 
 	logger.Info("Serving on" + getenv("APP_URL"))
 	http.ListenAndServe(getenv("APP_URL"), srv)

@@ -4,7 +4,7 @@
     "ryr4735": ["ryanair4735", "ryr 4735", "ryr-4735", "ryanair 4735"],
     "cleared": ["authorised", "approved"],
     "tower": ["control"],
-    "feet": ["ft"]
+    "feet": ["ft"] 
   },
   "simulations": {
     "takeoff": [

@@ -24,7 +24,6 @@ export function useSpeechToText() {
 	}
 
 	async function startMic() {
-		console.log("Starting microphone...");
 		audioContext = new AudioContext();
 		mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		micStream = audioContext.createMediaStreamSource(mediaStream);
@@ -32,7 +31,6 @@ export function useSpeechToText() {
 		analyser.fftSize = 64;
 		micStream.connect(analyser);
 		updateVolume();
-		console.log("Microphone started.");
 	}
 
 	function stopMic() {
@@ -42,7 +40,6 @@ export function useSpeechToText() {
 		audioContext = null;
 		micStream = null;
 		analyser = null;
-		mediaStream = null;
 		volume.value = 0;
 	}
 

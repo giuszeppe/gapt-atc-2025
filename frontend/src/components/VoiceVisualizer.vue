@@ -22,7 +22,7 @@ watch(() => props.volume, (vol) => {
   const minHeight = 4;
   const maxHeight = 100;
 
-  const effectiveVolume = vol > 0.1 ? vol : 0;
+  const effectiveVolume = vol > 0.15 ? vol : 0;
 
   bars.value = barWeights.map(weight => {
     const scaledHeight = minHeight + (maxHeight - minHeight) * effectiveVolume * weight;

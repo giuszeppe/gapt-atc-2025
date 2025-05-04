@@ -1,10 +1,10 @@
 package services
 
 import (
-	"log/slog"
-	"net/http"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
+	"log/slog"
+	"net/http"
 )
 
 func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
@@ -22,7 +22,17 @@ func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) 
 }
 
 type PostScenarioRequest struct {
-	Id int
+	Id                        int    `json:"scenario_id"`
+	InputType                 string `json:"input_type"`                  // block, text, speech
+	ScenarioType              string `json:"scenario_type"`               // takeoff, enroute, landing
+	Role                      string `json:"role"`                        // tower, aircraft
+	SimulationAdvancementType string `json:"simulation_advancement_type"` // continuous, steps
+	Mode                      string `json:"mode"`                        // single, multi
+}
+
+type PostScenarioResponse struct {
+	Steps      [][]stores.Step
+	Simulation stores.Simulation
 }
 
 func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
@@ -41,9 +51,38 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				encoder.EncodeError(w, 500, err, err.Error())
 			}
 
-			// return steps
-			encoder.Encode(w, r, 200, steps)
+			if data.Mode == "single" {
+				simulation, err := scenarioStore.StoreSimulation(
+					1, // logged-in user id
+					data.Id,
+					data.Role,
+					data.InputType,
+					data.ScenarioType,
+					data.SimulationAdvancementType,
+					data.Mode,
+				)
+				if err != nil {
+					encoder.EncodeError(w, 500, err, err.Error())
+				}
 
+				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
+
+			} else {
+				return
+			}
+
+		},
+	)
+}
+
+type EndSimulationRequest struct {
+	SimulationId int `json:"simulation_id"`
+	Transcripts  []stores.Transcript
+}
+
+func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
 		},
 	)
 }

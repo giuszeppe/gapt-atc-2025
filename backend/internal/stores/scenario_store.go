@@ -5,6 +5,23 @@ import (
 	"fmt"
 )
 
+type Transcript struct {
+	text string
+	Role string // 'tower', 'aircraft'
+}
+
+type Simulation struct {
+	// Role                      string `json:"role"`                        // tower, aircraft
+	Id                        int          `json:"scenario_id"`
+	InputType                 string       `json:"input_type"`                  // block, text, speech
+	ScenarioType              string       `json:"scenario_type"`               // takeoff, enroute, landing
+	SimulationAdvancementType string       `json:"simulation_advancement_type"` // continuous, steps
+	Mode                      string       `json:"mode"`                        // single, multi
+	Transcripts               []Transcript `json:"transcripts"`
+	TowerUserId               int          `json:"tower_user_id"`
+	AircraftUserId            int          `json:"aircraft_user_id"`
+}
+
 type Scenario struct {
 	ID            int
 	Name          string
@@ -78,14 +95,13 @@ func (s *ScenarioStore) GetScenarioStepsForId(scenarioId int) ([][]Step, error) 
 	}
 	defer stmt.Close()
 
-
 	rows, err := stmt.Query(scenarioId)
 	if err != nil {
 		return [][]Step{}, err
 	}
 	defer rows.Close()
 
-    res := [][]Step{[]Step{}, []Step{}}
+	res := [][]Step{{}, {}}
 
 	for rows.Next() {
 		var step Step
@@ -93,10 +109,104 @@ func (s *ScenarioStore) GetScenarioStepsForId(scenarioId int) ([][]Step, error) 
 		if err := rows.Scan(&step.Index, &step.Text, &step.Role, &extendedStep.Index, &extendedStep.Text, &extendedStep.Role); err != nil {
 			return [][]Step{}, err
 		}
-        res[0] = append(res[0], step)
-        res[1] = append(res[1], extendedStep)
+		res[0] = append(res[0], step)
+		res[1] = append(res[1], extendedStep)
 
 	}
 
 	return res, nil
+}
+
+func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType, scenarioType, advancementType, mode string) (Simulation, error) {
+	// Example: userId is assumed to be both tower and aircraft user for simplicity
+	query := `
+		INSERT INTO simulations (
+			scenario_id,
+			input_type,
+			scenario_type,
+			simulation_advancement_type,
+			mode,
+			tower_user_id,
+			aircraft_user_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+		RETURNING id;
+	`
+	towerId := -1
+	aircraftId := -1
+	if role == "tower" {
+		towerId = userId
+	} else {
+		aircraftId = userId
+	}
+
+	var id int
+	err := s.db.QueryRow(
+		query,
+		scenarioId,
+		inputType,
+		scenarioType,
+		advancementType,
+		mode,
+		towerId, // assuming same user for tower and aircraft
+		aircraftId,
+	).Scan(&id)
+
+	if err != nil {
+		return Simulation{}, err
+	}
+
+	simulation := Simulation{
+		Id:                        scenarioId,
+		InputType:                 inputType,
+		ScenarioType:              scenarioType,
+		SimulationAdvancementType: advancementType,
+		Mode:                      mode,
+		TowerUserId:               towerId,
+		AircraftUserId:            aircraftId,
+		Transcripts:               []Transcript{},
+	}
+
+	return simulation, nil
+}
+
+func (s *ScenarioStore) AddTranscriptsToSimulation(simulationId int, transcripts []Transcript) error {
+	query := `INSERT INTO transcripts VALUES`
+	values := []any{}
+
+	for idx, transcript := range transcripts {
+		values = append(values, transcript.text)
+		if idx == 0 {
+			query += `(?,?,?)`
+		} else {
+			query += `,(?,?,?)`
+		}
+	}
+	query += ";"
+
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(values...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *ScenarioStore) DoesLobbyCodeExist(code string) (bool, error) {
+	query := "SELECT count(*) FROM simulations WHERE lobby_id = ?;"
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return false, err
+	}
+	defer stmt.Close()
+	var count int
+	err = stmt.QueryRow(code).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	return count != 0, nil
 }

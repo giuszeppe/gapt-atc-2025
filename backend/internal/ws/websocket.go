@@ -1,8 +1,8 @@
 package ws
 
 import (
-	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"github.com/coder/websocket"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
@@ -64,7 +64,12 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, s
 
 	// send existing messages to client
 	for _, message := range lobby.Messages {
-		client.send <- []byte(message.Role + "\n" + message.Text)
+		msgJson, err := json.Marshal(message)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		client.send <- msgJson
 	}
 
 	go clientWriter(client)
@@ -75,6 +80,7 @@ func addClientToLobby(lobby *Lobby, client *Client) {
 	lobby.mutex.Lock()
 	defer lobby.mutex.Unlock()
 	lobby.clients[client] = true
+
 	fmt.Println("Client joined lobby")
 }
 
@@ -118,17 +124,25 @@ func clientWriter(client *Client) {
 	}
 }
 
+type WebsocketMessage struct {
+	Type    string          `json:"type"`
+	Content json.RawMessage `json:"content"`
+	Role    string          `json:"role"`
+}
+
 func broadcastToLobby(lobby *Lobby, data []byte, sender *Client) {
 	lobby.mutex.RLock()
 	defer lobby.mutex.RUnlock()
+	wsMsg := WebsocketMessage{}
+	err := json.Unmarshal(data, &wsMsg)
+	if err != nil {
+		fmt.Println("Unmarshal error:", err)
+	}
 
-	message := bytes.Split(data, []byte("\n"))
-	if bytes.Equal(message[0], []byte("text")) {
-		role := message[1]
-		content := message[2]
+	if wsMsg.Type == "text" {
 		lobby.Messages = append(lobby.Messages, stores.Message{
-			Role: string(role),
-			Text: string(content),
+			Role: wsMsg.Role,
+			Text: string(wsMsg.Content),
 		})
 		fmt.Println("Lobby broadcast and appended messaage:", lobby.Code, lobby.Messages)
 	}

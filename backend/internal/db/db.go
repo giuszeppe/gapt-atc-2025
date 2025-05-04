@@ -10,7 +10,7 @@ import (
 )
 
 func ResetDb() {
-    os.Create("example.db")
+	os.Create("example.db")
 
 	// SQLite DB connection
 	db, err := sql.Open("sqlite3", "example.db")
@@ -20,7 +20,11 @@ func ResetDb() {
 	defer db.Close()
 
 	// Directory containing DDL SQL files
-	ddlDir := "/Users/giuseppe/Documents/personal/gapt-atc-2025/backend/internal/db/ddl"
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ddlDir := filepath.Join(wd, "internal", "db", "ddl")
 
 	// Apply all DDL files in the directory
 	err = applyDDLsFromDirectory(db, ddlDir)
@@ -81,7 +85,11 @@ func SeedDb() {
 	defer db.Close()
 
 	// Directory containing DDL SQL files
-	ddlDir := "/Users/giuseppe/Documents/personal/gapt-atc-2025/backend/internal/db/seeds"
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Fatal(err)
+	}
+	ddlDir := filepath.Join(wd, "internal", "db", "seeds")
 
 	// Apply all DDL files in the directory
 	err = applyDDLsFromDirectory(db, ddlDir)

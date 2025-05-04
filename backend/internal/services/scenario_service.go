@@ -31,8 +31,8 @@ type PostScenarioRequest struct {
 }
 
 type PostScenarioResponse struct {
-	Steps      [][]stores.Step
-	Simulation stores.Simulation
+	Steps      [][]stores.Step   `json:"steps"`
+	Simulation stores.Simulation `json:"simulation"`
 }
 
 func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
@@ -77,8 +77,8 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 }
 
 type EndSimulationRequest struct {
-	SimulationId int `json:"simulation_id"`
-	Transcripts  []stores.Transcript
+	SimulationId int                 `json:"simulation_id"`
+	Transcripts  []stores.Transcript `json:"transcripts,omitempty"`
 }
 
 func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {

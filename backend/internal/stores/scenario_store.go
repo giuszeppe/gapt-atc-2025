@@ -6,8 +6,8 @@ import (
 )
 
 type Transcript struct {
-	text string
-	Role string // 'tower', 'aircraft'
+	Text string `json:"text"`
+	Role string `json:"role"` // 'tower', 'aircraft'
 }
 
 type Simulation struct {
@@ -23,17 +23,17 @@ type Simulation struct {
 }
 
 type Scenario struct {
-	ID            int
-	Name          string
-	Type          string
-	Steps         []Step
-	ExtendedSteps []Step
+	ID            int    `json:"id"`
+	Name          string `json:"name"`
+	Type          string `json:"type"`
+	Steps         []Step `json:"steps,omitempty"`
+	ExtendedSteps []Step `json:"extended_steps,omitempty"`
 }
 
 type Step struct {
-	Index int
-	Text  string
-	Role  string
+	Index int    `json:"index"`
+	Text  string `json:"text"`
+	Role  string `json:"role"`
 }
 
 type ScenarioStore struct {
@@ -174,7 +174,7 @@ func (s *ScenarioStore) AddTranscriptsToSimulation(simulationId int, transcripts
 	values := []any{}
 
 	for idx, transcript := range transcripts {
-		values = append(values, transcript.text)
+		values = append(values, transcript.Text)
 		if idx == 0 {
 			query += `(?,?,?)`
 		} else {

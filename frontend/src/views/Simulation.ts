@@ -1,4 +1,4 @@
-import { defineComponent, onMounted, ref } from "vue";
+import { defineComponent, onMounted, onUnmounted, ref } from "vue";
 import type { ChatMessage, SimulationStep } from "@/@types/types";
 import { useStore } from "@/store/store";
 import { useSpeechToText } from "@/composables/useSpeechToText";
@@ -17,7 +17,13 @@ export default defineComponent({
 
     const store = useStore();
     const userRole = store.userRole;
-    const inputType = store.inputType;
+    const inputType = "speech"; // store.inputType;
+    const simulationOutline = store.simulationOutline;
+    const simulationInput = store.simulationInput;
+    const isMultiplayer = store.isMultiplayer;
+    const lobbyCode = store.lobbyCode;
+    const isPlayerInLobby = store.isPlayerInLobby;
+    const socket = ref<WebSocket | null>(null);
 
     const currentStepIndex = ref<number>(0);
     const isUserTurn = ref<boolean>(true);
@@ -25,6 +31,27 @@ export default defineComponent({
     const synonyms = ref<Record<string, string[]>>({});
 
     onMounted(async () => {
+      if (isMultiplayer && !isPlayerInLobby) {
+        socket.value = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${store.lobbyCode}`);
+        store.isPlayerInLobby = true;
+        socket.value.onopen = () => {
+          console.log("WebSocket connection established.");
+        };
+
+        socket.value.onmessage = async (event) => {
+          const text = await event.data.text()
+          const jsonData = JSON.parse(text);
+          console.log("Message from server:", jsonData);
+        };
+
+        socket.value.onerror = (error) => {
+          console.error("WebSocket error:", error);
+        };
+
+        socket.value.onclose = () => {
+          console.log("WebSocket connection closed.");
+        };
+      }
       const scenarioJson = await fetch("/test.json");
       const scenarioData = await scenarioJson.json();
       rightPanelSteps.value = scenarioData.simulations.takeoff[0].steps;
@@ -38,6 +65,18 @@ export default defineComponent({
       autoRespond();
     });
 
+    onMounted(() => {
+      window.addEventListener("beforeunload", handleBeforeUnload);
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    });
+
+    function handleBeforeUnload() {
+      store.isPlayerInLobby = false;
+    }
+
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
       if (!step || step.role !== userRole) {
@@ -47,12 +86,20 @@ export default defineComponent({
       if (playerInput.value.trim() === "") return;
 
       const formattedText = formatUserInput(playerInput.value.trim(), step.text);
-
-      leftPanelMessages.value.push({
+      const object = {
         role: userRole,
         text: playerInput.value.trim(),
-        formattedText,
-      });
+        type: 'text',
+        content: formattedText,
+      }
+
+      leftPanelMessages.value.push(object);
+
+      if (socket.value) {
+        const a = JSON.stringify(object);
+        console.log("Sending message to server:", a);
+        socket.value.send(a)
+      }
 
       playerInput.value = "";
       currentStepIndex.value++;
@@ -83,13 +130,9 @@ export default defineComponent({
 
       for (let i = 0; i < rawWords.length; i++) {
         const oneWord = normalizeWord(rawWords[i]);
-        const twoWord = i + 1 < rawWords.length
-          ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`)
-          : null;
+        const twoWord = i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
 
-        const threeWord = i + 2 < rawWords.length
-          ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`)
-          : null;
+        const threeWord = i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
 
         if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
           normalizedWords.push(threeWord);
@@ -109,7 +152,7 @@ export default defineComponent({
         originalWords.push(rawWords[i]);
       }
 
-      let formattedText = "";
+      let formattedText = '';
       let expectedIndex = 0;
 
       for (let i = 0; i < normalizedWords.length; i++) {
@@ -130,7 +173,7 @@ export default defineComponent({
         }
 
         if (!matched) {
-          formattedText += `<span class="wrong-word">${original}</span> `;
+          formattedText += `<span class='wrong-word'>${original}</span> `;
         }
       }
 

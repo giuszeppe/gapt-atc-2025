@@ -1,4 +1,5 @@
 import type { SpeechRecognition, SpeechRecognitionEvent } from "@/@types/speech";
+import { useStore } from "@/store/store";
 import { ref, onMounted, onUnmounted } from "vue";
 
 export function useSpeechToText() {
@@ -11,6 +12,7 @@ export function useSpeechToText() {
 	let micStream: MediaStreamAudioSourceNode | null = null;
 	let mediaStream: MediaStream | null = null;
 	let animationFrameId: number;
+	let processor: any = null
 	let onStopCallback: (() => void) | null = null;
 
 	function updateVolume() {
@@ -27,6 +29,13 @@ export function useSpeechToText() {
 		audioContext = new AudioContext();
 		mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		micStream = audioContext.createMediaStreamSource(mediaStream);
+		processor = audioContext.createScriptProcessor(2048, 1, 1);
+		processor.connect(audioContext.destination);
+		micStream.connect(processor);
+		processor.onaudioprocess = (event: AudioProcessingEvent) => {
+			console.log(event.inputBuffer.getChannelData(0));
+		};
+		console.log("Microphone started", micStream);
 		analyser = audioContext.createAnalyser();
 		analyser.fftSize = 64;
 		micStream.connect(analyser);

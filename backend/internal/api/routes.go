@@ -1,7 +1,6 @@
 package api
 
 import (
-	"github.com/giuszeppe/gatp-atc-2025/backend/internal/api/middlewares"
 	"log/slog"
 	"net/http"
 
@@ -17,8 +16,8 @@ func addRoutes(
 	scenarioStore stores.ScenarioStore,
 	// authProxy           *authProxy,
 ) {
-	mux.Handle("/login", middlewares.UseCORS(services.HandleLoginService(logger, userStore, tokenStore)))
-	mux.Handle("/get-scenarios", middlewares.UseCORS(services.HandleGetScenario(logger, scenarioStore)))
-	mux.Handle("/post-simulation", middlewares.UseCORS(services.HandlePostSimulation(logger, scenarioStore)))
+	mux.Handle("/login", services.HandleLoginService(logger, userStore, tokenStore))
+	mux.Handle("/get-scenarios", services.HandleGetScenario(logger, scenarioStore))
+	mux.Handle("/post-simulation", services.HandlePostSimulation(logger, scenarioStore))
 	mux.Handle("/", http.NotFoundHandler())
 }

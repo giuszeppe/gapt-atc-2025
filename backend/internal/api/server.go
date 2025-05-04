@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"github.com/rs/cors"
 	"log/slog"
 	"net/http"
 	"os"
@@ -26,6 +27,7 @@ func NewServer(
 		// Config,
 	)
 	var handler http.Handler = mux
+	handler = cors.Default().Handler(handler)
 	return handler
 }
 

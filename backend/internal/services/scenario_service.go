@@ -68,6 +68,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
 
 			} else {
+				encoder.EncodeError(w, http.StatusBadRequest, "TBD", "TBD")
 				return
 			}
 

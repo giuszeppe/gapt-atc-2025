@@ -19,5 +19,6 @@ func addRoutes(
 	mux.Handle("/login", services.HandleLoginService(logger, userStore, tokenStore))
 	mux.Handle("/get-scenarios", services.HandleGetScenario(logger, scenarioStore))
 	mux.Handle("/post-simulation", services.HandlePostSimulation(logger, scenarioStore))
+	mux.Handle("/simulation-lobby", services.HandleMultiplayerLobbyWebsocket(logger, scenarioStore))
 	mux.Handle("/", http.NotFoundHandler())
 }

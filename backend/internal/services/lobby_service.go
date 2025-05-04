@@ -1,13 +1,64 @@
-package ws
+package services
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"github.com/coder/websocket"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/ws"
+	"log/slog"
+	"math/rand/v2"
 	"net/http"
 	"sync"
-
-	"github.com/coder/websocket"
 )
+
+func HandleMultiplayerLobbyWebsocket(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			ws.UpgradeConnectionToLobbyWebsocket(w, r)
+		},
+	)
+}
+
+func GenerateLobbyCode(scenarioStore stores.ScenarioStore) (string, error) {
+	tryCount := 0
+	for tryCount < 30 {
+		code := getRandomCode()
+		exist, err := doesCodeExists(code, scenarioStore)
+		if err != nil {
+			return "", err
+		}
+		if !exist {
+			return code, nil
+		}
+		tryCount++
+	}
+	return "", errors.New("could not generate lobby code")
+}
+
+func getRandomCode() string {
+	code := ""
+	letters := "QWERTYUIOPASDFGHJKLZXCVBNM"
+	numbers := "0123456789"
+	for i := 0; i < 6; i++ {
+		isLetter := rand.IntN(1)
+		if isLetter == 0 {
+			code += string(letters[rand.IntN(len(letters))])
+		} else {
+			code += string(numbers[rand.IntN(len(numbers))])
+		}
+	}
+	return code
+}
+
+func doesCodeExists(code string, store stores.ScenarioStore) (bool, error) {
+	exist, err := store.DoesLobbyCodeExist(code)
+	if err != nil {
+		return false, err
+	}
+	return exist, nil
+}
 
 type Client struct {
 	conn *websocket.Conn
@@ -15,6 +66,7 @@ type Client struct {
 }
 
 type Lobby struct {
+	Id      string
 	clients map[*Client]bool
 	mutex   sync.RWMutex
 }
@@ -36,13 +88,7 @@ func getOrCreateLobby(code string) *Lobby {
 	return lobby
 }
 
-func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request) {
-	lobbyCode := r.URL.Query().Get("lobby")
-	if lobbyCode == "" {
-		http.Error(w, "lobby code required", http.StatusBadRequest)
-		return
-	}
-
+func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, lobbyCode string) {
 	conn, err := websocket.Accept(w, r, nil)
 	if err != nil {
 		fmt.Println("WebSocket accept error:", err)
@@ -59,6 +105,14 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request) {
 
 	go clientWriter(client)
 	clientReader(lobby, client, r)
+}
+
+func wsHandler(w http.ResponseWriter, r *http.Request) {
+	lobbyCode := r.URL.Query().Get("lobby")
+	if lobbyCode == "" {
+		http.Error(w, "lobby code required", http.StatusBadRequest)
+		return
+	}
 }
 
 func addClientToLobby(lobby *Lobby, client *Client) {

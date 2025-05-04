@@ -33,6 +33,7 @@ type PostScenarioRequest struct {
 type PostScenarioResponse struct {
 	Steps      [][]stores.Step   `json:"steps"`
 	Simulation stores.Simulation `json:"simulation"`
+	LobbyCode  string            `json:"lobby_code,omitempty"`
 }
 
 func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
@@ -50,25 +51,28 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			if err != nil {
 				encoder.EncodeError(w, 500, err, err.Error())
 			}
+			simulation, err := scenarioStore.StoreSimulation(
+				1, // logged-in user id
+				data.Id,
+				data.Role,
+				data.InputType,
+				data.ScenarioType,
+				data.SimulationAdvancementType,
+				data.Mode,
+			)
+			if err != nil {
+				encoder.EncodeError(w, 500, err, err.Error())
+			}
 
 			if data.Mode == "single" {
-				simulation, err := scenarioStore.StoreSimulation(
-					1, // logged-in user id
-					data.Id,
-					data.Role,
-					data.InputType,
-					data.ScenarioType,
-					data.SimulationAdvancementType,
-					data.Mode,
-				)
+				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
+			} else {
+				lobbyCode, err := GenerateLobbyCode(scenarioStore)
 				if err != nil {
 					encoder.EncodeError(w, 500, err, err.Error())
 				}
 
-				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
-
-			} else {
-				encoder.EncodeError(w, http.StatusBadRequest, "TBD", "TBD")
+				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation, LobbyCode: lobbyCode})
 				return
 			}
 

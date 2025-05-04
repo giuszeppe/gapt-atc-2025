@@ -43,7 +43,7 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	conn, err := websocket.Accept(w, r, nil)
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"*"}})
 	if err != nil {
 		fmt.Println("WebSocket accept error:", err)
 		return

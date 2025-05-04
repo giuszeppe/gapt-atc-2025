@@ -16,7 +16,7 @@ import (
 func HandleMultiplayerLobbyWebsocket(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
-			ws.UpgradeConnectionToLobbyWebsocket(w, r)
+			ws.UpgradeConnectionToLobbyWebsocket(w, r, scenarioStore)
 		},
 	)
 }

@@ -8,6 +8,6 @@ CREATE TABLE IF NOT EXISTS simulations (
     tower_user_id INT,
     aircraft_user_id INT,
     scenario_id int,
-    lobby_id varchar(6)
+    lobby_id varchar(6) UNIQUE
 );
 

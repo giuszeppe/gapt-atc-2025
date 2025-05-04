@@ -81,8 +81,8 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 }
 
 type EndSimulationRequest struct {
-	SimulationId int                 `json:"simulation_id"`
-	Transcripts  []stores.Transcript `json:"transcripts,omitempty"`
+	SimulationId int               `json:"simulation_id"`
+	Transcripts  stores.Transcript `json:"transcripts,omitempty"`
 }
 
 func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {

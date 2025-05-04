@@ -6,20 +6,25 @@ import (
 )
 
 type Transcript struct {
+	Messages []Message `json:"messages"`
+}
+
+type Message struct {
+	Id   int    `json:"id"`
 	Text string `json:"text"`
 	Role string `json:"role"` // 'tower', 'aircraft'
 }
 
 type Simulation struct {
 	// Role                      string `json:"role"`                        // tower, aircraft
-	Id                        int          `json:"scenario_id"`
-	InputType                 string       `json:"input_type"`                  // block, text, speech
-	ScenarioType              string       `json:"scenario_type"`               // takeoff, enroute, landing
-	SimulationAdvancementType string       `json:"simulation_advancement_type"` // continuous, steps
-	Mode                      string       `json:"mode"`                        // single, multi
-	Transcripts               []Transcript `json:"transcripts"`
-	TowerUserId               int          `json:"tower_user_id"`
-	AircraftUserId            int          `json:"aircraft_user_id"`
+	Id                        int        `json:"scenario_id"`
+	InputType                 string     `json:"input_type"`                  // block, text, speech
+	ScenarioType              string     `json:"scenario_type"`               // takeoff, enroute, landing
+	SimulationAdvancementType string     `json:"simulation_advancement_type"` // continuous, steps
+	Mode                      string     `json:"mode"`                        // single, multi
+	Transcript                Transcript `json:"transcript,omitempty"`
+	TowerUserId               int        `json:"tower_user_id"`
+	AircraftUserId            int        `json:"aircraft_user_id"`
 }
 
 type Scenario struct {
@@ -163,18 +168,30 @@ func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType,
 		Mode:                      mode,
 		TowerUserId:               towerId,
 		AircraftUserId:            aircraftId,
-		Transcripts:               []Transcript{},
 	}
 
 	return simulation, nil
 }
 
-func (s *ScenarioStore) AddTranscriptsToSimulation(simulationId int, transcripts []Transcript) error {
-	query := `INSERT INTO transcripts VALUES`
+func (s *ScenarioStore) AddTranscriptToSimulationUsingLobbyCode(lobbyCode string, messages []Message) error {
+	query := `SELECT id FROM simulations WHERE lobby_id = $1;`
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	var simulationId int
+	err = stmt.QueryRow(lobbyCode).Scan(&simulationId)
+	if err != nil {
+		return err
+	}
+
+	query = `INSERT INTO transcripts (text,role,simulation_id) VALUES`
 	values := []any{}
 
-	for idx, transcript := range transcripts {
-		values = append(values, transcript.Text)
+	for idx, message := range messages {
+		values = append(values, message.Text, message.Role, simulationId)
 		if idx == 0 {
 			query += `(?,?,?)`
 		} else {
@@ -183,7 +200,7 @@ func (s *ScenarioStore) AddTranscriptsToSimulation(simulationId int, transcripts
 	}
 	query += ";"
 
-	stmt, err := s.db.Prepare(query)
+	stmt, err = s.db.Prepare(query)
 	if err != nil {
 		return err
 	}

@@ -27,7 +27,7 @@ type PostScenarioRequest struct {
 	ScenarioType              string `json:"scenario_type"`               // takeoff, enroute, landing
 	Role                      string `json:"role"`                        // tower, aircraft
 	SimulationAdvancementType string `json:"simulation_advancement_type"` // continuous, steps
-	Mode                      string `json:"mode"`                        // single, multi
+	Mode                      string `json:"mode"`                        // singleplayer, multiplayer
 }
 
 type PostScenarioResponse struct {
@@ -64,9 +64,9 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				encoder.EncodeError(w, 500, err, err.Error())
 			}
 
-			if data.Mode == "single" {
+			if data.Mode == "singleplayer" {
 				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
-			} else {
+			} else if data.Mode == "multiplayer" {
 				lobbyCode, err := GenerateLobbyCode(scenarioStore)
 				if err != nil {
 					encoder.EncodeError(w, 500, err, err.Error())

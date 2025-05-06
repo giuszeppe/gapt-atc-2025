@@ -187,24 +187,7 @@ func (s *ScenarioStore) AddTranscriptToSimulationUsingLobbyCode(lobbyCode string
 		return err
 	}
 
-	query = `INSERT INTO transcripts (text,role,simulation_id) VALUES`
-	values := []any{}
-
-	for idx, message := range messages {
-		values = append(values, message.Text, message.Role, simulationId)
-		if idx == 0 {
-			query += `(?,?,?)`
-		} else {
-			query += `,(?,?,?)`
-		}
-	}
-	query += ";"
-
-	stmt, err = s.db.Prepare(query)
-	if err != nil {
-		return err
-	}
-	_, err = stmt.Exec(values...)
+	err = s.addMessagesToSimulation(simulationId, messages)
 	if err != nil {
 		return err
 	}
@@ -226,4 +209,35 @@ func (s *ScenarioStore) DoesLobbyCodeExist(code string) (bool, error) {
 	}
 
 	return count != 0, nil
+}
+
+func (s *ScenarioStore) addMessagesToSimulation(simulationId int, messages []Message) error {
+	query := `INSERT INTO transcripts (text,role,simulation_id) VALUES`
+	values := []any{}
+
+	for idx, message := range messages {
+		values = append(values, message.Text, message.Role, simulationId)
+		if idx == 0 {
+			query += `(?,?,?)`
+		} else {
+			query += `,(?,?,?)`
+		}
+	}
+	query += ";"
+
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	_, err = stmt.Exec(values...)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// adds transcript to simulation
+func (s *ScenarioStore) EndSimulation(scenarioId int, messages []Message) error {
+	return s.addMessagesToSimulation(scenarioId, messages)
 }

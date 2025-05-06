@@ -81,13 +81,26 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 }
 
 type EndSimulationRequest struct {
-	SimulationId int               `json:"simulation_id"`
-	Transcripts  stores.Transcript `json:"transcripts,omitempty"`
+	SimulationId int              `json:"simulation_id"`
+	Messages     []stores.Message `json:"messages,omitempty"`
 }
 
 func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
+			// get simulation params
+			data, err := encoder.Decode[EndSimulationRequest](r)
+			if err != nil {
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				return
+			}
+
+			// fetch scenario steps
+			err = scenarioStore.EndSimulation(data.SimulationId, data.Messages)
+			if err != nil {
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+			}
+			encoder.Encode(w, r, http.StatusNoContent, "")
 		},
 	)
 }

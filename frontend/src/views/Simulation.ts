@@ -1,14 +1,14 @@
 import { defineComponent, onMounted, onUnmounted, ref, watch } from "vue";
-import type { ChatMessage, SimulationStep, ChannelMode } from "@/@types/types";
+import type { ChatMessage, SimulationStep } from "@/@types/types";
 import { useStore } from "@/store/store";
 import { useSpeechToText } from "@/composables/useSpeechToText";
 import VoiceVisualizer from "@/components/VoiceVisualizer.vue";
 import axios from "axios";
-import router from "@/router/router";
+import SimulationEndModal from "@/components/SimulationEndModal.vue";
 
 export default defineComponent({
   name: "Simulation",
-  components: { VoiceVisualizer },
+  components: { VoiceVisualizer, SimulationEndModal },
   setup() {
     const { transcript, isListening, volume, start, stop } = useSpeechToText();
 
@@ -17,6 +17,7 @@ export default defineComponent({
     const leftPanelMessages = ref<ChatMessage[]>([]);
     const playerInput = ref<string>("");
     const stepCount = ref<number>(0);
+    const showEndModal = ref<boolean>(false);
 
     const store = useStore();
     const userRole = store.userRole;
@@ -81,7 +82,7 @@ export default defineComponent({
     watch(leftPanelMessages.value, async (newVal) => {
       if (newVal.length == stepCount.value) {
         await axios.post("http://localhost:8080/end-simulation", { simulation_id: 1, messages: leftPanelMessages.value });
-        router.push({ name: "index" })
+        showEndModal.value = true;
       }
     })
 
@@ -246,6 +247,7 @@ export default defineComponent({
       isListening,
       transcript,
       volume,
+      showEndModal,
       toggleListening,
       handlePlayerInput,
     };

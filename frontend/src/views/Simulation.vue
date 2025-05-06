@@ -35,6 +35,8 @@
         </div>
       </div>
     </div>
+
+    <SimulationEndModal :isVisible="showEndModal" />
   </div>
 </template>
 

@@ -76,10 +76,31 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, s
 	clientReader(lobby, client, r, store)
 }
 
-func addClientToLobby(lobby *Lobby, client *Client) {
+type NewClientMsg struct {
+	Type    string `json:"type"`
+	Content string `json:"content"`
+}
+
+func addClientToLobby(lobby *Lobby, newClient *Client) {
 	lobby.mutex.Lock()
 	defer lobby.mutex.Unlock()
-	lobby.clients[client] = true
+	lobby.clients[newClient] = true
+
+	for client := range lobby.clients {
+		if client != newClient {
+			msg := NewClientMsg{
+				Type:    "newClient",
+				Content: "Added new client to lobby",
+			}
+			msgJson, err := json.Marshal(msg)
+			if err != nil {
+				fmt.Println(err)
+			}
+			select {
+			case client.send <- msgJson:
+			}
+		}
+	}
 
 	fmt.Println("Client joined lobby")
 }

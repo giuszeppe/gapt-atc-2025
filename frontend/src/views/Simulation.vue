@@ -2,7 +2,6 @@
   <div class="simulation-container">
     <div class="left-panel">
       <div class="chat-container">
-        {{ leftPanelMessages }}
         <div v-for="(message, index) in leftPanelMessages" :key="'left-' + index"
           :class="['chat-message', message.role === userRole ? 'right' : 'left']">
           <div class="chat-bubble">
@@ -36,7 +35,7 @@
       </div>
     </div>
 
-    <SimulationEndModal :isVisible="showEndModal" />
+    <SimulationEndModal :is-visible="showEndModal" :simulation-id="simulationId" />
   </div>
 </template>
 

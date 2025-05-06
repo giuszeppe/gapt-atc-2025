@@ -87,6 +87,7 @@ export default defineComponent({
       store.simulationInput = response.data.data.steps[0]; // simulation with ATC communication
       store.simulationOutline = response.data.data.steps[1]; // discoursive simulation
       store.lobbyCode = response.data.data.lobby_code;
+      store.simulationId = response.data.data.simulation.id;
       if (mode === "multiplayer" && store.lobbyCode) {
         const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${store.lobbyCode}`);
         store.isMultiplayer = true

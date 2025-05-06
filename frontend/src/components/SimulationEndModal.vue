@@ -17,12 +17,13 @@
 <script setup>
 import { useRouter } from 'vue-router';
 const props = defineProps({
-  isVisible: Boolean
+  isVisible: Boolean,
+  simulationId: Number,
 });
 const router = useRouter();
 
 function goToTranscripts() {
-  router.push({ name: 'transcripts' });
+  router.push({ path: `transcripts/${props.simulationId}` });
 }
 
 function goToIndex() {

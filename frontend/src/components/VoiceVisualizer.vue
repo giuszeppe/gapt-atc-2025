@@ -1,6 +1,6 @@
 <template>
   <div class="visualizer-wrapper">
-    <div v-for="(bar, i) in bars" :key="i" class="bar" :style="{ height: bar + '%' }" />
+    <div v-for="(bar, i) in bars" :key="i" class="bar" :style="{ height: bar + '%' }"></div>
   </div>
 </template>
 
@@ -15,7 +15,7 @@ const bars = ref<number[]>(Array(BAR_COUNT).fill(5));
 const barWeights = Array.from({ length: BAR_COUNT }, (_, i) => {
   const center = (BAR_COUNT - 1) / 2;
   const distance = Math.abs(i - center);
-  return 1 - distance / center * 0.6; 
+  return 1 - distance / center * 0.6;
 });
 
 watch(() => props.volume, (vol) => {

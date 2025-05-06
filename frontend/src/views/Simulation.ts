@@ -21,6 +21,7 @@ export default defineComponent({
 
     const store = useStore();
     const userRole = store.userRole;
+    const simulationId = store.simulationId;
     const inputType = "speech"; // store.inputType;
     const simulationOutline = store.simulationOutline;
     const simulationInput = store.simulationInput;
@@ -56,6 +57,7 @@ export default defineComponent({
           console.log("WebSocket connection closed.");
         };
       }
+      console.log("SIMULATION ID", store.simulationId);
       const scenarioJson = await fetch("/test.json");
       const scenarioData = await scenarioJson.json();
       rightPanelSteps.value = scenarioData.simulations.takeoff[0].steps;
@@ -81,7 +83,7 @@ export default defineComponent({
 
     watch(leftPanelMessages.value, async (newVal) => {
       if (newVal.length == stepCount.value) {
-        await axios.post("http://localhost:8080/end-simulation", { simulation_id: 1, messages: leftPanelMessages.value });
+        await axios.post("http://localhost:8080/end-simulation", { simulation_id: simulationId, messages: leftPanelMessages.value });
         showEndModal.value = true;
       }
     })
@@ -247,6 +249,7 @@ export default defineComponent({
       isListening,
       transcript,
       volume,
+      simulationId,
       showEndModal,
       toggleListening,
       handlePlayerInput,

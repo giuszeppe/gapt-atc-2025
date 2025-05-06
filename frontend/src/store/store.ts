@@ -10,6 +10,7 @@ export const useStore = defineStore('store', () => {
   const lobbyCode = ref<string | null>(localStorage.getItem('lobbyCode') || null)
   const isMultiplayer = ref<boolean>(JSON.parse(localStorage.getItem('isMultiplayer')!) || false)
   const isPlayerInLobby = ref<boolean>(JSON.parse(localStorage.getItem('isPlayerInLobby')!) || false)
+  const simulationId = ref<number | null>(JSON.parse(localStorage.getItem('simulationId')!) || null)
 
   watch(userRole, (newValue) => {
     localStorage.setItem('userRole', newValue ?? '')
@@ -39,5 +40,9 @@ export const useStore = defineStore('store', () => {
     localStorage.setItem('isPlayerInLobby', JSON.stringify(newValue))
   })
 
-  return { userRole, inputType, simulationOutline, simulationInput, lobbyCode, isMultiplayer, isPlayerInLobby }
+  watch(simulationId, (newValue) => {
+    localStorage.setItem('simulationId', JSON.stringify(newValue))
+  })
+
+  return { userRole, inputType, simulationOutline, simulationInput, lobbyCode, isMultiplayer, isPlayerInLobby, simulationId }
 })

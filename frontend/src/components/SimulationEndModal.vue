@@ -4,7 +4,7 @@
       <h2 class="modal-title">Simulation Complete</h2>
       <div class="modal-actions">
         <button @click="goToTranscripts" class="modal-button primary">
-          Transcripts
+          Consult transcript
         </button>
         <button @click="goToIndex" class="modal-button secondary">
           Home
@@ -43,7 +43,7 @@ function goToIndex() {
 }
 
 .modal-container {
-  background-color: #fff;
+  background-color: #003750;
   padding: 2rem;
   border-radius: 12px;
   max-width: 400px;
@@ -74,7 +74,7 @@ function goToIndex() {
 }
 
 .modal-button.primary {
-  background-color: #2563eb;
+  background-color: #007acc;
   color: white;
 }
 

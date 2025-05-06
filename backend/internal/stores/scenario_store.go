@@ -12,7 +12,7 @@ type Transcript struct {
 
 type Message struct {
 	Id   int    `json:"id"`
-	Text string `json:"text"`
+	Text string `json:"content"`
 	Role string `json:"role"` // 'tower', 'aircraft'
 }
 

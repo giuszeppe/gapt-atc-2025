@@ -2,6 +2,7 @@ package stores
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 )
 
@@ -281,4 +282,35 @@ func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*
 		transcripts[scenarioType][scenarioName][simulationId].Messages = append(transcripts[scenarioType][scenarioName][simulationId].Messages, message)
 	}
 	return transcripts, nil
+}
+func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcript, error) {
+	query := `SELECT id,text,role FROM transcripts WHERE simulation_id = ?`
+
+	messages := []Message{}
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return Transcript{}, err
+	}
+	defer stmt.Close()
+	rows, err := stmt.Query(simulationId)
+	if err != nil {
+		return Transcript{}, err
+	}
+	defer rows.Close()
+
+	found := false
+
+	for rows.Next() {
+		found = true
+		var message Message
+		if err := rows.Scan(&message.Id, &message.Text, &message.Role); err != nil {
+			return Transcript{}, err
+		}
+		messages = append(messages, message)
+	}
+	if !found {
+		return Transcript{}, errors.New("Not found")
+	}
+	return Transcript{Messages: messages}, nil
+
 }

@@ -5,6 +5,7 @@ import (
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"log/slog"
 	"net/http"
+	"strconv"
 )
 
 func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
@@ -50,6 +51,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			steps, err := scenarioStore.GetScenarioStepsForId(data.Id)
 			if err != nil {
 				encoder.EncodeError(w, 500, err, err.Error())
+				return
 			}
 			simulation, err := scenarioStore.StoreSimulation(
 				1, // logged-in user id
@@ -62,6 +64,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			)
 			if err != nil {
 				encoder.EncodeError(w, 500, err, err.Error())
+				return
 			}
 
 			if data.Mode == "singleplayer" {
@@ -70,6 +73,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				lobbyCode, err := GenerateLobbyCode(scenarioStore)
 				if err != nil {
 					encoder.EncodeError(w, 500, err, err.Error())
+					return
 				}
 
 				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation, LobbyCode: lobbyCode})
@@ -99,6 +103,7 @@ func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore
 			err = scenarioStore.EndSimulation(data.SimulationId, data.Messages)
 			if err != nil {
 				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				return
 			}
 			encoder.Encode(w, r, http.StatusNoContent, "")
 		},
@@ -112,9 +117,31 @@ func HandleGetTranscripts(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			// fetch scenario steps
 			transcripts, err := scenarioStore.GetGroupedTranscripts()
 			if err != nil {
-				encoder.EncodeError(w, 500, err, err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				return
 			}
-			encoder.Encode(w, r, 200, transcripts)
+			encoder.Encode(w, r, http.StatusOK, transcripts)
+		},
+	)
+}
+func HandleGetTranscript(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			simulationId, err := strconv.Atoi(r.PathValue("id"))
+			if err != nil {
+				logger.Error(err.Error())
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				return
+			}
+
+			// fetch scenario steps
+			transcripts, err := scenarioStore.GetTranscriptBySimulationId(simulationId)
+			if err != nil {
+				logger.Error(err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				return
+			}
+			encoder.Encode(w, r, http.StatusOK, transcripts)
 		},
 	)
 }

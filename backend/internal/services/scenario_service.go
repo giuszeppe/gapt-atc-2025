@@ -15,6 +15,7 @@ func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) 
 			scenarios, err := scenarioStore.View(scenarioType)
 			if err != nil {
 				encoder.EncodeError(w, 500, err, err.Error())
+				return
 			}
 			encoder.Encode(w, r, 200, scenarios)
 

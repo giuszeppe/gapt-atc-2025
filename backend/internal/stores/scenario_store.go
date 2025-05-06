@@ -232,6 +232,7 @@ func (s *ScenarioStore) addMessagesToSimulation(simulationId int, messages []Mes
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	_, err = stmt.Exec(values...)
 	if err != nil {
 		return err

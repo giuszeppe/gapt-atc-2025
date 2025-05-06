@@ -18,7 +18,7 @@ export interface SimulationStep {
 export interface ChatMessage {
     role: Role;
     text: string;
-    formattedText?: string;
+    content?: string;
 }
 
 export type InputType = "block" | "text" | "speech";

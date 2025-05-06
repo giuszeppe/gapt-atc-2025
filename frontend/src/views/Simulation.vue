@@ -5,7 +5,7 @@
         <div v-for="(message, index) in leftPanelMessages" :key="'left-' + index"
           :class="['chat-message', message.role === userRole ? 'right' : 'left']">
           <div class="chat-bubble">
-            <div v-if="message.role === userRole" v-html="message.formattedText"></div>
+            <div v-if="message.role === userRole" v-html="message.content"></div>
             <div v-else>{{ message.text }}</div>
           </div>
         </div>

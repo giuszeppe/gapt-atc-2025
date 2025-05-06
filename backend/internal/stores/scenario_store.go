@@ -18,7 +18,8 @@ type Message struct {
 
 type Simulation struct {
 	// Role                      string `json:"role"`                        // tower, aircraft
-	Id                        int        `json:"scenario_id"`
+	Id                        int        `json:"id"`
+	ScenarioId                int        `json:"scenario_id"`
 	InputType                 string     `json:"input_type"`                  // block, text, speech
 	ScenarioType              string     `json:"scenario_type"`               // takeoff, enroute, landing
 	SimulationAdvancementType string     `json:"simulation_advancement_type"` // continuous, steps
@@ -123,7 +124,7 @@ func (s *ScenarioStore) GetScenarioStepsForId(scenarioId int) ([][]Step, error) 
 	return res, nil
 }
 
-func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType, scenarioType, advancementType, mode string) (Simulation, error) {
+func (s *ScenarioStore) StoreSimulation(scenarioId int, role, inputType, scenarioType, advancementType, mode string) (Simulation, error) {
 	// Example: userId is assumed to be both tower and aircraft user for simplicity
 	query := `
 		INSERT INTO simulations (
@@ -139,11 +140,11 @@ func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType,
 	`
 	towerId := -1
 	aircraftId := -1
-	if role == "tower" {
+	/*if role == "tower" {
 		towerId = userId
 	} else {
 		aircraftId = userId
-	}
+	}*/
 
 	var id int
 	err := s.db.QueryRow(
@@ -162,7 +163,8 @@ func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType,
 	}
 
 	simulation := Simulation{
-		Id:                        scenarioId,
+		Id:                        id,
+		ScenarioId:                scenarioId,
 		InputType:                 inputType,
 		ScenarioType:              scenarioType,
 		SimulationAdvancementType: advancementType,

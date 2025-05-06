@@ -54,7 +54,6 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				return
 			}
 			simulation, err := scenarioStore.StoreSimulation(
-				1, // logged-in user id
 				data.Id,
 				data.Role,
 				data.InputType,

@@ -237,7 +237,48 @@ func (s *ScenarioStore) addMessagesToSimulation(simulationId int, messages []Mes
 	return nil
 }
 
-// adds transcript to simulation
+// EndSimulation adds transcript to simulation
 func (s *ScenarioStore) EndSimulation(scenarioId int, messages []Message) error {
 	return s.addMessagesToSimulation(scenarioId, messages)
+}
+
+/**
+ -type
+	-scenario_specific
+		-transcript 1
+		- transcript 2
+*/
+
+func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*Transcript, error) {
+	query := `SELECT t.id, t.text, t.role, s.name, s.type, t.simulation_id FROM transcripts t
+    LEFT JOIN simulations ON simulations.id = t.simulation_id
+    LEFT JOIN main.scenarios s on simulations.scenario_id = s.id`
+
+	rows, err := s.db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	transcripts := make(map[string]map[string]map[int]*Transcript)
+	for rows.Next() {
+		var message Message
+		var scenarioType string
+		var scenarioName string // here I am assuming scenario names are unique
+		var simulationId int
+		if err := rows.Scan(&message.Id, &message.Text, &message.Role, &scenarioName, &scenarioType, &simulationId); err != nil {
+			return nil, nil
+		}
+		if _, ok := transcripts[scenarioType]; !ok {
+			transcripts[scenarioType] = make(map[string]map[int]*Transcript)
+		}
+		if _, ok := transcripts[scenarioType][scenarioName]; !ok {
+			transcripts[scenarioType][scenarioName] = make(map[int]*Transcript)
+		}
+		if _, ok := transcripts[scenarioType][scenarioName][simulationId]; !ok {
+			transcripts[scenarioType][scenarioName][simulationId] = &Transcript{}
+		}
+		transcripts[scenarioType][scenarioName][simulationId].Messages = append(transcripts[scenarioType][scenarioName][simulationId].Messages, message)
+	}
+	return transcripts, nil
 }

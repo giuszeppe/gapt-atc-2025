@@ -104,3 +104,17 @@ func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore
 		},
 	)
 }
+
+func HandleGetTranscripts(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
+	return http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+
+			// fetch scenario steps
+			transcripts, err := scenarioStore.GetGroupedTranscripts()
+			if err != nil {
+				encoder.EncodeError(w, 500, err, err.Error())
+			}
+			encoder.Encode(w, r, 200, transcripts)
+		},
+	)
+}

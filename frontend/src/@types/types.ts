@@ -17,10 +17,12 @@ export interface SimulationStep {
 
 export interface ChatMessage {
     role: Role;
-    text: string;
-    content?: string;
+    type: ChannelMode;
+    content: string;
 }
 
 export type InputType = "block" | "text" | "speech";
 
 export type Role = "aircraft" | "tower";
+
+export type ChannelMode = "text" | "audio";

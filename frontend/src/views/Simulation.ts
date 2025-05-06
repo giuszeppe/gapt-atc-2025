@@ -1,8 +1,10 @@
-import { defineComponent, onMounted, onUnmounted, ref } from "vue";
-import type { ChatMessage, SimulationStep } from "@/@types/types";
+import { defineComponent, onMounted, onUnmounted, ref, watch } from "vue";
+import type { ChatMessage, SimulationStep, ChannelMode } from "@/@types/types";
 import { useStore } from "@/store/store";
 import { useSpeechToText } from "@/composables/useSpeechToText";
 import VoiceVisualizer from "@/components/VoiceVisualizer.vue";
+import axios from "axios";
+import router from "@/router/router";
 
 export default defineComponent({
   name: "Simulation",
@@ -14,6 +16,7 @@ export default defineComponent({
     const testOutputSteps = ref<SimulationStep[]>([]);
     const leftPanelMessages = ref<ChatMessage[]>([]);
     const playerInput = ref<string>("");
+    const stepCount = ref<number>(0);
 
     const store = useStore();
     const userRole = store.userRole;
@@ -61,11 +64,9 @@ export default defineComponent({
       const chatData = await chatJson.json();
 
       testOutputSteps.value = chatData.simulations.takeoff[0].steps;
+      stepCount.value = testOutputSteps.value.length;
 
       autoRespond();
-    });
-
-    onMounted(() => {
       window.addEventListener("beforeunload", handleBeforeUnload);
     });
 
@@ -77,6 +78,13 @@ export default defineComponent({
       store.isPlayerInLobby = false;
     }
 
+    watch(leftPanelMessages.value, async (newVal) => {
+      if (newVal.length == stepCount.value) {
+        await axios.post("http://localhost:8080/end-simulation", { simulation_id: 1, messages: leftPanelMessages.value });
+        router.push({ name: "index" })
+      }
+    })
+
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
       if (!step || step.role !== userRole) {
@@ -86,10 +94,9 @@ export default defineComponent({
       if (playerInput.value.trim() === "") return;
 
       const formattedText = formatUserInput(playerInput.value.trim(), step.text);
-      const object = {
+      const object: ChatMessage = {
         role: userRole,
-        text: playerInput.value.trim(),
-        type: 'text',
+        type: "text",
         content: formattedText,
       }
 
@@ -110,9 +117,11 @@ export default defineComponent({
     function autoRespond() {
       while (testOutputSteps.value[currentStepIndex.value] && testOutputSteps.value[currentStepIndex.value].role !== userRole) {
         const step = testOutputSteps.value[currentStepIndex.value];
+        const content = formatUserInput(step.text, step.text);
         leftPanelMessages.value.push({
           role: step.role,
-          text: step.text,
+          content: content,
+          type: 'text',
         });
         currentStepIndex.value++;
       }
@@ -196,7 +205,6 @@ export default defineComponent({
         start();
       }
     }
-
 
     function normalizeWord(word: string): string {
       return word.replace(/[.,]/g, "").toLowerCase();

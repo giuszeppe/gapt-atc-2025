@@ -21,6 +21,7 @@ export default defineComponent({
 
     const wordBlocks = ref<string[]>([]);
     const selectedWords = ref<string[]>([]);
+    const dragIndex = ref<number | null>(null)
 
     const store = useStore();
     const userRole = store.userRole;
@@ -109,16 +110,6 @@ export default defineComponent({
         showEndModal.value = true;
       }
     });
-
-    const selectWord = (word: string) => {
-      if (!selectedWords.value.includes(word)) {
-        selectedWords.value.push(word);
-      }
-    };
-
-    const deselectWord = (word: string) => {
-      selectedWords.value = selectedWords.value.filter((w) => w !== word);
-    };
 
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
@@ -252,6 +243,33 @@ export default defineComponent({
       return formattedText.trim();
     }
 
+    function onDragStart(index: number) {
+      dragIndex.value = index
+    }
+
+    function onDrop(targetIndex: number) {
+      if (dragIndex.value === null || dragIndex.value === targetIndex) return
+
+      const draggedWord = selectedWords.value[dragIndex.value]
+      selectedWords.value.splice(dragIndex.value, 1)
+      selectedWords.value.splice(targetIndex, 0, draggedWord)
+
+      dragIndex.value = null
+    }
+
+    function selectWord(word: string) {
+      if (!selectedWords.value.includes(word)) {
+        selectedWords.value.push(word)
+      }
+    }
+
+    function deselectWord(word: string) {
+      const index = selectedWords.value.indexOf(word)
+      if (index !== -1) {
+        selectedWords.value.splice(index, 1)
+      }
+    }
+
     function matchesAnySynonym(phrase: string, synonymsMap: Record<string, string[]>) {
       for (const key in synonymsMap) {
         if (synonymsMap[key].includes(phrase)) return true;
@@ -328,6 +346,8 @@ export default defineComponent({
       handlePlayerInput,
       selectWord,
       deselectWord,
+      onDragStart,
+      onDrop,
     };
   },
 });

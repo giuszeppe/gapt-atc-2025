@@ -28,6 +28,7 @@
           <div class="block-mode">
             <div class="selected-blocks">
               <div v-for="(word, index) in selectedWords" :key="'selected-' + index" class="block selected"
+                draggable="true" @dragstart="onDragStart(index)" @dragover.prevent @drop="onDrop(index)"
                 @click="deselectWord(word)">
                 {{ word }}
               </div>
@@ -43,6 +44,7 @@
             <button class="submit-button" @click="handlePlayerInput">Submit</button>
           </div>
         </template>
+
       </div>
     </div>
 

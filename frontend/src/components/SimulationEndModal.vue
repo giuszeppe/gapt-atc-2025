@@ -1,7 +1,7 @@
 <template>
   <div v-if="props.isVisible" class="modal-overlay">
     <div class="modal-container">
-      <h2 class="modal-title">Simulation Complete</h2>
+      <h2 class="modal-title">Simulation Completed</h2>
       <div class="modal-actions">
         <button @click="goToTranscripts" class="modal-button primary">
           Consult transcript
@@ -31,7 +31,9 @@ function goToIndex() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="less">
+@import "@/assets/variables.less";
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -43,7 +45,7 @@ function goToIndex() {
 }
 
 .modal-container {
-  background-color: #003750;
+  background-color: @primary-blue;
   padding: 2rem;
   border-radius: 12px;
   max-width: 400px;
@@ -55,6 +57,11 @@ function goToIndex() {
 .modal-title {
   font-size: 1.5rem;
   margin-bottom: 1rem;
+}
+
+.primary {
+  background-color: @secondary-blue;
+  color: white;
 }
 
 .modal-actions {
@@ -73,19 +80,6 @@ function goToIndex() {
   transition: background-color 0.3s;
 }
 
-.modal-button.primary {
-  background-color: #007acc;
-  color: white;
-}
-
-.modal-button.primary:hover {
-  background-color: #1e40af;
-}
-
-.modal-button.secondary {
-  background-color: #e5e7eb;
-  color: #1f2937;
-}
 
 .modal-button.secondary:hover {
   background-color: #d1d5db;

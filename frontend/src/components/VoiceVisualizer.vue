@@ -31,7 +31,8 @@ watch(() => props.volume, (vol) => {
 });
 </script>
 
-<style scoped>
+<style scoped lang="less">
+@import "@/assets/variables.less";
 .visualizer-wrapper {
   display: flex;
   align-items: center;
@@ -43,7 +44,7 @@ watch(() => props.volume, (vol) => {
 
 .bar {
   width: 6px;
-  background: yellow;
+  background-color: @primary-yellow;
   border-radius: 3px;
   transition: height 0.12s ease;
 }

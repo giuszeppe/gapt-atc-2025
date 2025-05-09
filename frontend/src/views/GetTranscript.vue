@@ -12,12 +12,13 @@
 
 <script src="./GetTranscript.ts" lang="ts"></script>
 
-<style scoped>
+<style scoped lang="less">
+@import "@/assets/variables.less";
 .transcript-container {
   width: 60%;
   height: 100%;
-  border-left: 1px solid #003750;
-  border-right: 1px solid #003750;
+  border-left: 1px solid @primary-blue;
+  border-right: 1px solid @primary-blue;
   color: white;
   display: flex;
   flex-direction: column;

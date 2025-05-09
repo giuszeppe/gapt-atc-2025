@@ -66,7 +66,9 @@
 
 <script src="./Simulation.ts" lang="ts"></script>
 
-<style scoped>
+<style scoped lang="less">
+@import "@/assets/variables.less";
+
 .speech-section {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(6px);
@@ -144,14 +146,14 @@
 }
 
 .chat-bubble {
-  background-color: rgb(96, 96, 96);
+  background-color: @primary-gray;
   padding: 0.8rem 1rem;
   border-radius: 1rem;
   word-break: break-word;
 }
 
 .chat-message.right .chat-bubble {
-  background-color: #003750;
+  background-color: @primary-blue;
 }
 
 .input-container {
@@ -174,7 +176,7 @@
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 8px;
-  background-color: #007acc;
+  background-color: @secondary-blue;
   color: white;
   cursor: pointer;
 }

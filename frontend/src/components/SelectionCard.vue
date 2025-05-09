@@ -10,10 +10,11 @@
 <script lang="ts" src="./SelectionCard.ts" />
 
 <style scoped lang="less">
+@import "@/assets/variables.less";
 .selection-card {
   width: 250px;
   height: 350px;
-  border: 3px solid yellow;
+  border: 3px solid @primary-yellow;
   border-radius: 15px;
   display: flex;
   justify-content: space-evenly;

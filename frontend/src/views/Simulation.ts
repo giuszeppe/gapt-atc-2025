@@ -26,7 +26,7 @@ export default defineComponent({
     const store = useStore();
     const userRole = store.userRole;
     const simulationId = store.simulationId;
-    const inputType = store.inputType; // or "speech"
+    const inputType = store.inputType;
     const simulationOutline = store.simulationOutline;
     const simulationInput = store.simulationInput;
     const socket = ref<WebSocket | null>(null);
@@ -86,16 +86,6 @@ export default defineComponent({
       window.removeEventListener("beforeunload", handleBeforeUnload);
     });
 
-    const selectedWordIndexes = ref<number[]>([]);
-
-    function toggleWordSelection(index: number) {
-      const idx = selectedWordIndexes.value.indexOf(index);
-      if (idx !== -1) {
-        selectedWordIndexes.value.splice(idx, 1);
-      } else {
-        selectedWordIndexes.value.push(index);
-      }
-    }
 
     function handleBeforeUnload() {
       store.isPlayerInLobby = false;
@@ -182,6 +172,17 @@ export default defineComponent({
       }
     }
 
+    function toggleListening() {
+      if (isListening.value) {
+        stop(() => {
+          playerInput.value = transcript.value.trim();
+        });
+      } else {
+        start();
+      }
+    }
+
+    // #region TEXT
     function formatUserInput(userInput: string, expectedInput: string): string {
       const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
       const synonymsMap = synonyms.value;
@@ -243,57 +244,11 @@ export default defineComponent({
       return formattedText.trim();
     }
 
-    function onDragStart(index: number) {
-      dragIndex.value = index
-    }
-
-    function onDrop(targetIndex: number) {
-      if (dragIndex.value === null || dragIndex.value === targetIndex) return
-
-      const draggedWord = selectedWords.value[dragIndex.value]
-      selectedWords.value.splice(dragIndex.value, 1)
-      selectedWords.value.splice(targetIndex, 0, draggedWord)
-
-      dragIndex.value = null
-    }
-
-    function selectWord(word: string) {
-      if (!selectedWords.value.includes(word)) {
-        selectedWords.value.push(word)
-      }
-    }
-
-    function deselectWord(word: string) {
-      const index = selectedWords.value.indexOf(word)
-      if (index !== -1) {
-        selectedWords.value.splice(index, 1)
-      }
-    }
-
     function matchesAnySynonym(phrase: string, synonymsMap: Record<string, string[]>) {
       for (const key in synonymsMap) {
         if (synonymsMap[key].includes(phrase)) return true;
       }
       return false;
-    }
-
-    function shuffleArray<T>(array: T[]): T[] {
-      const shuffled = array.slice();
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
-      return shuffled;
-    }
-
-    function toggleListening() {
-      if (isListening.value) {
-        stop(() => {
-          playerInput.value = transcript.value.trim();
-        });
-      } else {
-        start();
-      }
     }
 
     function normalizeWord(word: string): string {
@@ -325,6 +280,58 @@ export default defineComponent({
       }
       return matrix[b.length][a.length];
     }
+
+    // #endregion
+
+    // #region BLOCK
+    function onDragStart(index: number) {
+      dragIndex.value = index
+    }
+
+    function onDrop(targetIndex: number) {
+      if (dragIndex.value === null || dragIndex.value === targetIndex) return
+
+      const draggedWord = selectedWords.value[dragIndex.value]
+      selectedWords.value.splice(dragIndex.value, 1)
+      selectedWords.value.splice(targetIndex, 0, draggedWord)
+
+      dragIndex.value = null
+    }
+
+    function selectWord(word: string) {
+      if (!selectedWords.value.includes(word)) {
+        selectedWords.value.push(word)
+      }
+    }
+
+    function deselectWord(word: string) {
+      const index = selectedWords.value.indexOf(word)
+      if (index !== -1) {
+        selectedWords.value.splice(index, 1)
+      }
+    }
+
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = array.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    }
+
+    const selectedWordIndexes = ref<number[]>([]);
+
+    function toggleWordSelection(index: number) {
+      const idx = selectedWordIndexes.value.indexOf(index);
+      if (idx !== -1) {
+        selectedWordIndexes.value.splice(idx, 1);
+      } else {
+        selectedWordIndexes.value.push(index);
+      }
+    }
+
+    // #endregion
 
     return {
       rightPanelSteps,

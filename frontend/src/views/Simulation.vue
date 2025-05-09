@@ -14,13 +14,35 @@
       <VoiceVisualizer :volume="volume" v-if="inputType == 'speech' && isListening" />
 
       <div class="input-container">
-        <input v-model="playerInput" @keyup.enter="handlePlayerInput"
-          placeholder="Type your message and press Enter..." />
-        <button @click="toggleListening" v-if="inputType == 'speech'">
-          <font-awesome-icon icon="fa-solid fa-microphone" />
-          {{ isListening ? 'Stop' : 'Speak' }}
-        </button>
-        <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
+        <template v-if="inputType === 'text' || inputType === 'speech'">
+          <input v-model="playerInput" @keyup.enter="handlePlayerInput"
+            placeholder="Type your message and press Enter..." />
+          <button @click="toggleListening" v-if="inputType == 'speech'">
+            <font-awesome-icon icon="fa-solid fa-microphone" />
+            {{ isListening ? 'Stop' : 'Speak' }}
+          </button>
+          <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
+        </template>
+
+        <template v-if="inputType == 'block'">
+          <div class="block-mode">
+            <div class="selected-blocks">
+              <div v-for="(word, index) in selectedWords" :key="'selected-' + index" class="block selected"
+                @click="deselectWord(word)">
+                {{ word }}
+              </div>
+            </div>
+
+            <div class="block-container">
+              <div v-for="(word, index) in wordBlocks" :key="index" class="block"
+                :class="{ invisible: selectedWords.includes(word) }" @click="selectWord(word)">
+                {{ word }}
+              </div>
+            </div>
+
+            <button class="submit-button" @click="handlePlayerInput">Submit</button>
+          </div>
+        </template>
       </div>
     </div>
 
@@ -79,6 +101,8 @@
 .left-panel {
   width: 60%;
   display: flex;
+  justify-content: center;
+  align-items: center;
   flex-direction: column;
   background-color: #1e1e1e;
 }
@@ -87,6 +111,8 @@
   width: 40%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
+  align-items: center;
   padding: 1rem;
   overflow-y: auto;
   background-color: #121212;
@@ -127,10 +153,10 @@
 }
 
 .input-container {
+  width: 90%;
   padding: 1rem;
   display: flex;
   gap: 0.5rem;
-  background-color: #2c2c2c;
 }
 
 .input-container input {
@@ -156,5 +182,42 @@
   background-color: #333;
   background-color: #555;
   cursor: not-allowed;
+}
+
+.block-container,
+.selected-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.block {
+  background-color: #1e3a8a;
+  /* dark blue */
+  color: white;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+}
+
+.block-mode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 1rem;
+}
+
+
+.block.selected {
+  background-color: #2563eb;
+  /* lighter blue for selected output */
+}
+
+.invisible {
+  visibility: hidden;
 }
 </style>

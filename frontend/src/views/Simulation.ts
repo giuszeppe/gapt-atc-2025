@@ -19,15 +19,15 @@ export default defineComponent({
     const stepCount = ref<number>(0);
     const showEndModal = ref<boolean>(false);
 
+    const wordBlocks = ref<string[]>([]);
+    const selectedWords = ref<string[]>([]);
+
     const store = useStore();
     const userRole = store.userRole;
     const simulationId = store.simulationId;
-    const inputType = "speech"; // store.inputType;
+    const inputType = store.inputType; // or "speech"
     const simulationOutline = store.simulationOutline;
     const simulationInput = store.simulationInput;
-    const isMultiplayer = store.isMultiplayer;
-    const lobbyCode = store.lobbyCode;
-    const isPlayerInLobby = store.isPlayerInLobby;
     const socket = ref<WebSocket | null>(null);
 
     const currentStepIndex = ref<number>(0);
@@ -36,15 +36,16 @@ export default defineComponent({
     const synonyms = ref<Record<string, string[]>>({});
 
     onMounted(async () => {
-      if (isMultiplayer && !isPlayerInLobby) {
+      if (store.isMultiplayer && !store.isPlayerInLobby) {
         socket.value = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${store.lobbyCode}`);
         store.isPlayerInLobby = true;
+
         socket.value.onopen = () => {
           console.log("WebSocket connection established.");
         };
 
         socket.value.onmessage = async (event) => {
-          const text = await event.data.text()
+          const text = await event.data.text();
           const jsonData = JSON.parse(text);
           console.log("Message from server:", jsonData);
         };
@@ -57,7 +58,14 @@ export default defineComponent({
           console.log("WebSocket connection closed.");
         };
       }
-      console.log("SIMULATION ID", store.simulationId);
+
+      if (inputType === "block") {
+        const initialStep = testOutputSteps.value[currentStepIndex.value];
+        if (initialStep && initialStep.role === userRole) {
+          wordBlocks.value = initialStep.text.trim().split(/\s+/);
+        }
+      }
+
       const scenarioJson = await fetch("/test.json");
       const scenarioData = await scenarioJson.json();
       rightPanelSteps.value = scenarioData.simulations.takeoff[0].steps;
@@ -77,60 +85,111 @@ export default defineComponent({
       window.removeEventListener("beforeunload", handleBeforeUnload);
     });
 
+    const selectedWordIndexes = ref<number[]>([]);
+
+    function toggleWordSelection(index: number) {
+      const idx = selectedWordIndexes.value.indexOf(index);
+      if (idx !== -1) {
+        selectedWordIndexes.value.splice(idx, 1);
+      } else {
+        selectedWordIndexes.value.push(index);
+      }
+    }
+
     function handleBeforeUnload() {
       store.isPlayerInLobby = false;
     }
 
     watch(leftPanelMessages.value, async (newVal) => {
-      if (newVal.length == stepCount.value) {
-        await axios.post("http://localhost:8080/end-simulation", { simulation_id: simulationId, messages: leftPanelMessages.value });
+      if (newVal.length === stepCount.value) {
+        await axios.post("http://localhost:8080/end-simulation", {
+          simulation_id: simulationId,
+          messages: leftPanelMessages.value,
+        });
         showEndModal.value = true;
       }
-    })
+    });
+
+    const selectWord = (word: string) => {
+      if (!selectedWords.value.includes(word)) {
+        selectedWords.value.push(word);
+      }
+    };
+
+    const deselectWord = (word: string) => {
+      selectedWords.value = selectedWords.value.filter((w) => w !== word);
+    };
 
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
-      if (!step || step.role !== userRole) {
-        return;
+      if (!step || step.role !== userRole) return;
+
+      let inputText = "";
+
+      if (inputType != "block") {
+        inputText = playerInput.value.trim();
+        if (!inputText) return;
+      } else if (inputType === "block") {
+        inputText = selectedWords.value.join(" ").trim();
+        if (!inputText) return;
       }
 
-      if (playerInput.value.trim() === "") return;
-
-      const formattedText = formatUserInput(playerInput.value.trim(), step.text);
+      const formattedText = formatUserInput(inputText, step.text);
       const object: ChatMessage = {
         role: userRole,
         type: "text",
         content: formattedText,
-      }
+      };
 
       leftPanelMessages.value.push(object);
 
       if (socket.value) {
-        const a = JSON.stringify(object);
-        console.log("Sending message to server:", a);
-        socket.value.send(a)
+        const msg = JSON.stringify(object);
+        console.log("Sending message to server:", msg);
+        socket.value.send(msg);
       }
 
       playerInput.value = "";
+      selectedWords.value = [];
+      wordBlocks.value = [];
+
       currentStepIndex.value++;
 
+      if (inputType === "block") {
+        const nextStep = testOutputSteps.value[currentStepIndex.value];
+        if (nextStep && nextStep.role === userRole) {
+          wordBlocks.value = nextStep.text.trim().split(/\s+/);
+        } else {
+          wordBlocks.value = [];
+        }
+      }
       autoRespond();
     };
 
     function autoRespond() {
-      while (testOutputSteps.value[currentStepIndex.value] && testOutputSteps.value[currentStepIndex.value].role !== userRole) {
+      while (
+        testOutputSteps.value[currentStepIndex.value] &&
+        testOutputSteps.value[currentStepIndex.value].role !== userRole
+      ) {
         const step = testOutputSteps.value[currentStepIndex.value];
         const content = formatUserInput(step.text, step.text);
         leftPanelMessages.value.push({
           role: step.role,
           content: content,
-          type: 'text',
+          type: "text",
         });
         currentStepIndex.value++;
       }
 
-      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role == userRole;
-    };
+      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole;
+
+      if (isUserTurn.value && inputType === "block") {
+        const step = testOutputSteps.value[currentStepIndex.value];
+        if (step) {
+          wordBlocks.value = shuffleArray(step.text.trim().split(/\s+/));
+        }
+      }
+    }
 
     function formatUserInput(userInput: string, expectedInput: string): string {
       const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
@@ -142,9 +201,10 @@ export default defineComponent({
 
       for (let i = 0; i < rawWords.length; i++) {
         const oneWord = normalizeWord(rawWords[i]);
-        const twoWord = i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
-
-        const threeWord = i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
+        const twoWord =
+          i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
+        const threeWord =
+          i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
 
         if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
           normalizedWords.push(threeWord);
@@ -164,7 +224,7 @@ export default defineComponent({
         originalWords.push(rawWords[i]);
       }
 
-      let formattedText = '';
+      let formattedText = "";
       let expectedIndex = 0;
 
       for (let i = 0; i < normalizedWords.length; i++) {
@@ -197,6 +257,15 @@ export default defineComponent({
         if (synonymsMap[key].includes(phrase)) return true;
       }
       return false;
+    }
+
+    function shuffleArray<T>(array: T[]): T[] {
+      const shuffled = array.slice();
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
     }
 
     function toggleListening() {
@@ -250,9 +319,15 @@ export default defineComponent({
       transcript,
       volume,
       simulationId,
+      wordBlocks,
+      selectedWords,
       showEndModal,
+      selectedWordIndexes,
+      toggleWordSelection,
       toggleListening,
       handlePlayerInput,
+      selectWord,
+      deselectWord,
     };
   },
 });

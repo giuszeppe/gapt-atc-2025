@@ -14,6 +14,8 @@ export function useSpeechToText() {
 	let animationFrameId: number;
 	let processor: any = null
 	let onStopCallback: (() => void) | null = null;
+	let outputBuffer = ref<AudioBuffer | null>(null);
+	let bufferQueue: Float32Array[] = [];
 
 	function updateVolume() {
 		if (analyser) {
@@ -29,26 +31,58 @@ export function useSpeechToText() {
 		audioContext = new AudioContext();
 		mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
 		micStream = audioContext.createMediaStreamSource(mediaStream);
+
 		processor = audioContext.createScriptProcessor(2048, 1, 1);
-		processor.connect(audioContext.destination);
-		micStream.connect(processor);
 		processor.onaudioprocess = (event: AudioProcessingEvent) => {
-			console.log(event.inputBuffer.getChannelData(0));
+			const input = event.inputBuffer.getChannelData(0);
+			const inputCopy = new Float32Array(input.length);
+			inputCopy.set(input);
+			bufferQueue.push(inputCopy);
 		};
-		console.log("Microphone started", micStream);
+
+
+		micStream.connect(processor);
+		processor.connect(audioContext.destination);
+
 		analyser = audioContext.createAnalyser();
 		analyser.fftSize = 64;
 		micStream.connect(analyser);
 		updateVolume();
 	}
 
+	function replayAudio(outputBuffer: AudioBuffer) {
+		const replayAudioContext = new AudioContext();
+		const source = replayAudioContext.createBufferSource();
+		source.buffer = outputBuffer;
+		source.connect(replayAudioContext.destination);
+		source.start();
+		source.onended = () => {
+			replayAudioContext.close();
+		};
+	}
+
 	function stopMic() {
 		if (animationFrameId) cancelAnimationFrame(animationFrameId);
 		mediaStream?.getTracks().forEach(track => track.stop());
+		if (audioContext && bufferQueue.length > 0) {
+			const totalLength = bufferQueue.reduce((acc, buf) => acc + buf.length, 0);
+			outputBuffer.value = audioContext.createBuffer(1, totalLength, audioContext.sampleRate);
+			const combined = outputBuffer.value.getChannelData(0);
+
+			let offset = 0;
+			for (const buf of bufferQueue) {
+				combined.set(buf, offset);
+				offset += buf.length;
+			}
+		}
+
+		// replayAudio();
+
 		audioContext?.close();
 		audioContext = null;
 		micStream = null;
 		analyser = null;
+		bufferQueue = [];
 		volume.value = 0;
 	}
 
@@ -104,5 +138,5 @@ export function useSpeechToText() {
 		recognition?.stop();
 	};
 
-	return { transcript, isListening, start, stop, volume };
+	return { transcript, isListening, start, stop, replayAudio, outputBuffer, volume };
 }

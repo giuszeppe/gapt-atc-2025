@@ -10,7 +10,7 @@ export default defineComponent({
   name: "Simulation",
   components: { VoiceVisualizer, SimulationEndModal },
   setup() {
-    const { transcript, isListening, volume, start, stop } = useSpeechToText();
+    const { transcript, isListening, volume, outputBuffer, start, stop, replayAudio } = useSpeechToText();
 
     const rightPanelSteps = ref<SimulationStep[]>([]);
     const testOutputSteps = ref<SimulationStep[]>([]);
@@ -26,7 +26,7 @@ export default defineComponent({
     const store = useStore();
     const userRole = store.userRole;
     const simulationId = store.simulationId;
-    const inputType = store.inputType;
+    const inputType = "speech";
     const simulationOutline = store.simulationOutline;
     const simulationInput = store.simulationInput;
     const socket = ref<WebSocket | null>(null);
@@ -172,10 +172,55 @@ export default defineComponent({
       }
     }
 
+    function uint8ToBase64(bytes: Uint8Array): string {
+      let binary = '';
+      const len = bytes.byteLength;
+      for (let i = 0; i < len; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary);
+    }
+
+    async function base64ToAudioBuffer(base64: string): Promise<AudioBuffer> {
+      const binary = atob(base64);
+
+      const len = binary.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+
+      const floatBuffer = new Float32Array(bytes.buffer);
+      const audioContext = new AudioContext();
+
+      const audioBuffer = audioContext.createBuffer(1, floatBuffer.length, audioContext.sampleRate);
+      audioBuffer.copyToChannel(floatBuffer, 0);
+
+      return audioBuffer;
+    }
+
+
     function toggleListening() {
       if (isListening.value) {
-        stop(() => {
+        stop(async () => {
           playerInput.value = transcript.value.trim();
+          if (!outputBuffer.value) return
+          console.log(outputBuffer.value)
+          console.log(socket.value)
+          if (socket.value && outputBuffer.value) {
+            const channelData = outputBuffer.value.getChannelData(0);
+
+            const float32Array = new Float32Array(channelData.length);
+            float32Array.set(channelData);
+            const uint8Array = new Uint8Array(float32Array.buffer);
+
+            const base64 = uint8ToBase64(uint8Array)
+            console.log("BASE&$", base64);
+            socket.value.send(JSON.stringify({ type: "audio", content: base64 }));
+
+            replayAudio((await base64ToAudioBuffer(base64)));
+          }
+
         });
       } else {
         start();

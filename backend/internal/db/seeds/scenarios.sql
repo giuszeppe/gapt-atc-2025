@@ -1,4 +1,6 @@
-INSERT INTO scenarios (id, type, name) VALUES
-    (1, "takeoff", "Test takeoff"),
-(2, "enroute", "Test enroute"),
-(3, "landing", "Test landing");
+INSERT INTO scenarios (id, name,type) VALUES
+  (1, 'Takeoff Simulation (standard)', 'takeoff'),
+  (2, 'Takeoff Simulation (rain)', 'takeoff'),
+  (3, 'Takeoff Simulation (bird_strike)', 'takeoff'),
+  (4, 'Takeoff Simulation (emergency)', 'takeoff');
+

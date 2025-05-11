@@ -26,7 +26,7 @@ export default defineComponent({
     const store = useStore();
     const userRole = store.userRole;
     const simulationId = store.simulationId;
-    const inputType = "speech";
+    const inputType = store.inputType;
     const simulationOutline = store.simulationOutline;
     const simulationInput = store.simulationInput;
     const socket = ref<WebSocket | null>(null);
@@ -85,7 +85,6 @@ export default defineComponent({
     onUnmounted(() => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     });
-
 
     function handleBeforeUnload() {
       store.isPlayerInLobby = false;
@@ -205,8 +204,6 @@ export default defineComponent({
         stop(async () => {
           playerInput.value = transcript.value.trim();
           if (!outputBuffer.value) return
-          console.log(outputBuffer.value)
-          console.log(socket.value)
           if (socket.value && outputBuffer.value) {
             const channelData = outputBuffer.value.getChannelData(0);
 

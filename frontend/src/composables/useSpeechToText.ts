@@ -40,7 +40,6 @@ export function useSpeechToText() {
 			bufferQueue.push(inputCopy);
 		};
 
-
 		micStream.connect(processor);
 		processor.connect(audioContext.destination);
 
@@ -75,8 +74,6 @@ export function useSpeechToText() {
 				offset += buf.length;
 			}
 		}
-
-		// replayAudio();
 
 		audioContext?.close();
 		audioContext = null;
@@ -138,5 +135,5 @@ export function useSpeechToText() {
 		recognition?.stop();
 	};
 
-	return { transcript, isListening, start, stop, replayAudio, outputBuffer, volume };
+	return { transcript, isListening, outputBuffer, volume, start, stop, replayAudio };
 }

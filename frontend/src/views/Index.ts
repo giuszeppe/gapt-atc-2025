@@ -58,40 +58,54 @@ export default defineComponent({
     const selections = ref<string[]>([]);
     const currentStep = ref(0);
 
+    const showSelectionFlow = ref(false);
+    const showJoinLobbyInput = ref(false);
+    const lobbyCodeInput = ref("");
+    const joinLobbyError = ref("");
+
     async function handleSelection(value: string) {
       selections.value[currentStep.value] = value;
       if (steps[currentStep.value].title === "scenario") {
-        await requestScenarios(value)
+        await requestScenarios(value);
       }
       if (steps[currentStep.value].title === "mode") {
-        setupSimulationMode(value);
+        await setupSimulationMode(value);
       }
       if (currentStep.value < steps.length - 1) {
         currentStep.value++;
       }
-    };
+    }
 
     async function requestScenarios(type: string) {
       const response = await axios.get("http://localhost:8080/get-scenarios", {
-        params: { type: type },
+        params: { type },
       });
       const scenariosList = response.data.data.map((item: { name: string }) => item.name) as string[];
       const simulationStep = steps.find(step => step.title === "simulation");
       if (simulationStep) {
-        simulationStep.options = scenariosList.map((name: string) => ({ title: name, icon: "circle-play" }));
+        simulationStep.options = scenariosList.map(name => ({
+          title: name,
+          icon: "circle-play",
+        }));
       }
     }
 
     async function setupSimulationMode(mode: string) {
-      const response = await axios.post("http://localhost:8080/post-simulation", { scenario_id: 1, mode })
-      store.simulationInput = response.data.data.steps[0]; // simulation with ATC communication
-      store.simulationOutline = response.data.data.steps[1]; // discoursive simulation
+      const response = await axios.post("http://localhost:8080/post-simulation", {
+        scenario_id: 1,
+        mode,
+      });
+
+      store.simulationInput = response.data.data.steps[0];
+      store.simulationOutline = response.data.data.steps[1];
       store.lobbyCode = response.data.data.lobby_code;
       store.simulationId = response.data.data.simulation.id;
+
       if (mode === "multiplayer" && store.lobbyCode) {
         const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${store.lobbyCode}`);
-        store.isMultiplayer = true
-        store.isPlayerInLobby = true
+        store.isMultiplayer = true;
+        store.isPlayerInLobby = true;
+
         socket.onopen = () => {
           console.log("WebSocket connection established.");
         };
@@ -105,11 +119,32 @@ export default defineComponent({
         };
 
         socket.onclose = () => {
-          store.isPlayerInLobby = false
+          store.isPlayerInLobby = false;
           console.log("WebSocket connection closed.");
         };
       }
     }
+
+    async function joinLobby() {
+      joinLobbyError.value = "";
+      if (!lobbyCodeInput.value) return;
+
+      try {
+        console.log(lobbyCodeInput.value);
+        const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${lobbyCodeInput.value}`);
+        router.push({ name: "simulation" });
+      } catch (error) {
+        joinLobbyError.value = "Lobby not found or already full";
+      }
+    }
+
+    const isComplete = computed(() => selections.value.length === steps.length);
+
+    watch(isComplete, () => {
+      store.inputType = selections.value[0] as InputType;
+      store.userRole = selections.value[3] as Role;
+      router.push({ name: "simulation" });
+    });
 
     onMounted(() => {
       store.inputType = null;
@@ -119,21 +154,17 @@ export default defineComponent({
       store.isPlayerInLobby = false;
     });
 
-    const isComplete = computed(() => selections.value.length === steps.length);
-
-    watch(isComplete, () => {
-      const store = useStore();
-      store.inputType = selections.value[0] as InputType;
-      store.userRole = selections.value[3] as Role;
-      router.push({ name: "simulation" });
-    })
-
     return {
       steps,
       selections,
       currentStep,
       isComplete,
       handleSelection,
+      showSelectionFlow,
+      showJoinLobbyInput,
+      lobbyCodeInput,
+      joinLobbyError,
+      joinLobby,
     };
-  },
+  }
 });

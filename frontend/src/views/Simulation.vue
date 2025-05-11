@@ -199,7 +199,6 @@
 
 .block {
   background-color: #1e3a8a;
-  /* dark blue */
   color: white;
   padding: 0.5rem 1rem;
   cursor: pointer;

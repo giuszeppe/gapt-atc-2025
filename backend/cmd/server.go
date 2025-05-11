@@ -34,7 +34,7 @@ to quickly create a Cobra application.`,
 		}
 		defer db.Close()
 
-		tokenStore := stores.NewMemoryStore[string]()
+		tokenStore := stores.NewTokenStore()
 		userStore := stores.NewUserStore(db)
 		scenarioStore := stores.NewScenarioStore(db)
 		if err := api.Run(ctx, os.Getenv, tokenStore, userStore, scenarioStore); err != nil {

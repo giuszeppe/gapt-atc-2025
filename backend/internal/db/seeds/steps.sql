@@ -1,6 +1,84 @@
-INSERT INTO steps(id, idx, role, text, scenario_id) VALUES
-( 1, 1, 'controller', 'test controller', 1),
-( 2, 2, 'tower', 'test tower', 1);
-INSERT INTO extended_steps(id, idx, role, text, scenario_id) VALUES
-( 1, 1, 'controller', 'test controller extended', 1),
-( 2, 2, 'tower', 'test tower extended', 1);
+
+INSERT INTO steps (id, scenario_id, idx, role, text) VALUES
+    (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
+    (2, 1, 2, 'aircraft', 'Malta Ground, KM102, request taxi to runway 31.'),
+    (3, 1, 3, 'tower', 'KM102, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
+    (4, 1, 4, 'aircraft', 'Malta Tower, KM102, holding short runway 31 at C1, ready for departure.'),
+    (5, 1, 5, 'tower', 'KM102, runway 31 cleared for takeoff.'),
+    (6, 1, 6, 'aircraft', 'Cleared for takeoff runway 31, KM102.'),
+    (7, 1, 7, 'aircraft', 'Malta Tower, KM102, airborne, passing 1000 feet.'),
+    (8, 1, 8, 'tower', 'KM102, roger, contact Malta Radar on 128.15.'),
+    (9, 1, 9, 'aircraft', 'Malta Radar, KM102, climbing through 1500 feet.'),
+
+    (10, 2, 1, 'system', 'Environment: Moderate rain reported, wet runway conditions.'),
+    (11, 2, 2, 'aircraft', 'Malta Ground, RYR4735, request taxi to runway 31, aware of wet runway conditions.'),
+    (12, 2, 3, 'tower', 'RYR4735, taxi to holding point C1 via Alpha and Charlie. Caution: braking action reported medium. Contact Tower on 118.3 at C1.'),
+    (13, 2, 4, 'aircraft', 'Malta Tower, RYR4735, holding short runway 31 at C1, ready for departure. We are prepared for reduced braking.'),
+    (14, 2, 5, 'tower', 'RYR4735, wind 290 at 8, runway 31 cleared for takeoff. Use caution for standing water.'),
+    (15, 2, 6, 'aircraft', 'Cleared for takeoff runway 31, RYR4735. Caution acknowledged.'),
+    (16, 2, 7, 'aircraft', 'Malta Tower, RYR4735, airborne, positive climb, gear up.'),
+    (17, 2, 8, 'tower', 'RYR4735, roger, radar contact, contact Malta Radar on 128.15.'),
+    (18, 2, 9, 'aircraft', 'Malta Radar, RYR4735, climbing through 1500 feet, moderate turbulence encountered.'),
+
+    (19, 3, 1, 'system', 'Environment: Bird strike on takeoff, returning to the field.'),
+    (20, 3, 2, 'aircraft', 'Malta Ground, LH1276, request taxi to runway 31.'),
+    (21, 3, 3, 'tower', 'LH1276, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
+    (22, 3, 4, 'aircraft', 'Malta Tower, LH1276, holding short runway 31 at C1, ready for departure.'),
+    (23, 3, 5, 'tower', 'LH1276, runway 31 cleared for takeoff.'),
+    (24, 3, 6, 'aircraft', 'Cleared for takeoff runway 31, LH1276.'),
+    (25, 3, 7, 'aircraft', 'Malta Tower, LH1276, bird strike, engine 2 affected, declaring PAN PAN, request immediate return.'),
+    (26, 3, 8, 'tower', 'LH1276, roger PAN PAN, turn left heading 270, climb not above 3000 feet, cleared to return runway 31. Fire and rescue alerted.'),
+    (27, 3, 9, 'aircraft', 'Turning left heading 270, not above 3000 feet, returning runway 31, LH1276.'),
+
+    (28, 4, 1, 'system', 'Environment: Engine failure reported, declaring emergency.'),
+    (29, 4, 2, 'aircraft', 'Malta Ground, KM102, request taxi to runway 31.'),
+    (30, 4, 3, 'tower', 'KM102, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
+    (31, 4, 4, 'aircraft', 'Malta Tower, KM102, holding short runway 31 at C1, ready for departure.'),
+    (32, 4, 5, 'tower', 'KM102, runway 31 cleared for takeoff.'),
+    (33, 4, 6, 'aircraft', 'Cleared for takeoff runway 31, KM102.'),
+    (34, 4, 7, 'aircraft', 'Malta Tower, KM102, engine failure, declaring MAYDAY, requesting immediate return.'),
+    (35, 4, 8, 'tower', 'KM102, roger MAYDAY, turn right heading 090, maintain 2000 feet, cleared visual approach runway 31. Emergency services are standing by.'),
+    (36, 4, 9, 'aircraft', 'Turning right heading 090, maintain 2000 feet, cleared visual approach runway 31, KM102.');
+
+
+INSERT INTO extended_steps (id, idx, text, role, scenario_id) VALUES
+  (1, 1, 'Scenario begins with clear weather, ideal for a normal takeoff.', 'system', 1),
+  (2, 2, 'The aircraft requests taxi clearance from Ground Control.', 'aircraft', 1),
+  (3, 3, 'Ground Control provides taxi instructions to the aircraft.', 'tower', 1),
+  (4, 4, 'The aircraft reports holding short of the runway, ready for departure.', 'aircraft', 1),
+  (5, 5, 'Tower clears the aircraft for takeoff on the specified runway.', 'tower', 1),
+  (6, 6, 'The aircraft acknowledges takeoff clearance and begins takeoff roll.', 'aircraft', 1),
+  (7, 7, 'The aircraft reports airborne and climbing through 1000 feet.', 'aircraft', 1),
+  (8, 8, 'Tower acknowledges the aircraft’s report and provides radar frequency.', 'tower', 1),
+  (9, 9, 'The aircraft establishes contact with Radar Control, continuing climb.', 'aircraft', 1),
+
+  (10, 1, 'Scenario begins with moderate rain, affecting runway conditions.', 'system', 2),
+  (11, 2, 'The aircraft requests taxi clearance, acknowledging wet runway conditions.', 'aircraft', 2),
+  (12, 3, 'Ground Control issues taxi instructions with a caution for braking.', 'tower', 2),
+  (13, 4, 'The aircraft reports holding short, prepared for reduced braking.', 'aircraft', 2),
+  (14, 5, 'Tower clears the aircraft for takeoff, cautioning for standing water.', 'tower', 2),
+  (15, 6, 'The aircraft acknowledges takeoff clearance, mindful of conditions.', 'aircraft', 2),
+  (16, 7, 'The aircraft reports airborne, maintaining climb despite turbulence.', 'aircraft', 2),
+  (17, 8, 'Tower acknowledges and provides radar contact instructions.', 'tower', 2),
+  (18, 9, 'The aircraft reports climbing, noting moderate turbulence.', 'aircraft', 2),
+
+  (19, 1, 'Scenario begins with a bird strike on takeoff, requiring a return.', 'system', 3),
+  (20, 2, 'The aircraft requests taxi clearance from Ground Control.', 'aircraft', 3),
+  (21, 3, 'Ground Control provides taxi instructions to the aircraft.', 'tower', 3),
+  (22, 4, 'The aircraft reports holding short of the runway, ready for departure.', 'aircraft', 3),
+  (23, 5, 'Tower clears the aircraft for takeoff on the specified runway.', 'tower', 3),
+  (24, 6, 'The aircraft acknowledges takeoff clearance.', 'aircraft', 3),
+  (25, 7, 'The aircraft reports a bird strike, declaring PAN PAN and requesting return.', 'aircraft', 3),
+  (26, 8, 'Tower acknowledges PAN PAN, provides vector for return, and alerts emergency services.', 'tower', 3),
+  (27, 9, 'The aircraft confirms instructions and initiates return.', 'aircraft', 3),
+
+  (28, 1, 'Scenario begins with an engine failure, leading to an emergency declaration.', 'system', 4),
+  (29, 2, 'The aircraft requests taxi clearance from Ground Control.', 'aircraft', 4),
+  (30, 3, 'Ground Control provides taxi instructions to the aircraft.', 'tower', 4),
+  (31, 4, 'The aircraft reports holding short of the runway, ready for departure.', 'aircraft', 4),
+  (32, 5, 'Tower clears the aircraft for takeoff on the specified runway.', 'tower', 4),
+  (33, 6, 'The aircraft acknowledges takeoff clearance.', 'aircraft', 4),
+  (34, 7, 'The aircraft reports an engine failure, declaring MAYDAY and requesting return.', 'aircraft', 4),
+  (35, 8, 'Tower acknowledges MAYDAY, provides vector and clears for emergency return.', 'tower', 4),
+  (36, 9, 'The aircraft confirms instructions and initiates emergency approach.', 'aircraft', 4);
+

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"log/slog"
@@ -38,7 +39,7 @@ type PostScenarioResponse struct {
 	LobbyCode  string            `json:"lobby_code,omitempty"`
 }
 
-func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
+func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore, tokenStore *stores.TokenStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			// get simulation params
@@ -54,32 +55,45 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				encoder.EncodeError(w, 500, err, err.Error())
 				return
 			}
-			simulation, err := scenarioStore.StoreSimulation(
+
+			token := r.Header.Get("Authorization")
+			user, err := tokenStore.GetUserByToken(token)
+			fmt.Println("Token: ", token)
+			fmt.Println(tokenStore.View())
+			if err != nil {
+				encoder.EncodeError(w, 401, err, err.Error())
+			}
+
+			simulation, lobbyCode := stores.Simulation{}, ""
+			if data.Mode == "multiplayer" {
+				lobbyCode, err = GenerateLobbyCode(scenarioStore)
+				if err != nil {
+					encoder.EncodeError(w, 500, err, err.Error())
+					return
+				}
+			}
+
+			simulation, err = scenarioStore.StoreSimulation(
 				data.Id,
+				user.ID,
 				data.Role,
 				data.InputType,
 				data.ScenarioType,
 				data.SimulationAdvancementType,
 				data.Mode,
+				lobbyCode, // Include the lobby code here
 			)
 			if err != nil {
 				encoder.EncodeError(w, 500, err, err.Error())
 				return
 			}
 
-			if data.Mode == "singleplayer" {
-				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation})
-			} else if data.Mode == "multiplayer" {
-				lobbyCode, err := GenerateLobbyCode(scenarioStore)
-				if err != nil {
-					encoder.EncodeError(w, 500, err, err.Error())
-					return
-				}
-
-				encoder.Encode(w, r, 200, PostScenarioResponse{Steps: steps, Simulation: simulation, LobbyCode: lobbyCode})
-				return
+			response := PostScenarioResponse{Steps: steps, Simulation: simulation}
+			if data.Mode == "multiplayer" {
+				response.LobbyCode = lobbyCode
 			}
 
+			encoder.Encode(w, r, 200, response)
 		},
 	)
 }

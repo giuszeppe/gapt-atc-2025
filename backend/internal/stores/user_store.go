@@ -8,6 +8,7 @@ type User struct {
 	ID       int
 	Username string
 	Password string
+	Token    string
 }
 
 type UserStore struct {
@@ -54,13 +55,15 @@ func (s *UserStore) Exist(user User) (bool, error) {
 
 func (s *UserStore) GetUserWithUsername(username string) (User, error) {
 	var password string
-	err := s.db.QueryRow("SELECT password FROM users WHERE username=?", username).Scan(&password)
+	var id int
+	err := s.db.QueryRow("SELECT id,password FROM users WHERE username=?", username).Scan(&id, &password)
 
 	if err != nil {
-        return User{}, err
+		return User{}, err
 	}
 
 	return User{
+		ID:       id,
 		Username: username,
 		Password: password,
 	}, nil

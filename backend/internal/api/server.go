@@ -12,7 +12,7 @@ import (
 
 func NewServer(
 	logger *slog.Logger,
-	tokenStore stores.Store[string],
+	tokenStore *stores.TokenStore,
 	userStore *stores.UserStore,
 	scenarioStore *stores.ScenarioStore,
 	// config *Config,
@@ -34,7 +34,7 @@ func NewServer(
 func Run(
 	ctx context.Context,
 	getenv func(string) string,
-	tokenStore stores.Store[string],
+	tokenStore *stores.TokenStore,
 	userStore *stores.UserStore,
 	scenarioStore *stores.ScenarioStore,
 ) error {

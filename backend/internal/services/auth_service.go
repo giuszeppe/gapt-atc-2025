@@ -19,7 +19,7 @@ type TokenResponse struct {
 	Token string `json:"token"`
 }
 
-func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenStore stores.Store[string]) http.Handler {
+func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenStore *stores.TokenStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			// Check if the request is a POST request
@@ -41,9 +41,17 @@ func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenSt
 			logger.Info(username + " " + password)
 
 			// Verify login credentials
-			if auth.Login(userStore, username, password) {
-				token, _ := auth.RandomHex(20)
-				tokenStore.Store(token)
+			if user, ok := auth.Login(userStore, username, password); ok {
+				var token string
+				t, _ := auth.RandomHex(20)
+				token += "Bearer " + t
+				user.Token = token
+				user.Password = ""
+				err := tokenStore.Store(user)
+				if err != nil {
+					logger.Error(err.Error())
+					return
+				}
 				response := TokenResponse{Token: token}
 
 				encoder.Encode(w, r, http.StatusOK, response)

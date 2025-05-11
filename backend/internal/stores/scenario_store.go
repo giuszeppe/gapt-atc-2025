@@ -27,6 +27,7 @@ type Simulation struct {
 	Transcript                Transcript `json:"transcript,omitempty"`
 	TowerUserId               int        `json:"tower_user_id"`
 	AircraftUserId            int        `json:"aircraft_user_id"`
+	LobbyCode                 string     `json:"lobby_code,omitempty"`
 }
 
 type Scenario struct {
@@ -89,6 +90,7 @@ func (s *ScenarioStore) View(scenarioType string) ([]Scenario, error) {
 
 	return scenarios, nil
 }
+
 func (s *ScenarioStore) GetScenarioStepsForId(scenarioId int) ([][]Step, error) {
 	stmt, err := s.db.Prepare(`
         SELECT st.idx, st.text, st.role, est.idx, est.text, est.role
@@ -124,7 +126,7 @@ func (s *ScenarioStore) GetScenarioStepsForId(scenarioId int) ([][]Step, error) 
 	return res, nil
 }
 
-func (s *ScenarioStore) StoreSimulation(scenarioId int, role, inputType, scenarioType, advancementType, mode string) (Simulation, error) {
+func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType, scenarioType, advancementType, mode, lobbyCode string) (Simulation, error) {
 	// Example: userId is assumed to be both tower and aircraft user for simplicity
 	query := `
 		INSERT INTO simulations (
@@ -134,17 +136,18 @@ func (s *ScenarioStore) StoreSimulation(scenarioId int, role, inputType, scenari
 			simulation_advancement_type,
 			mode,
 			tower_user_id,
-			aircraft_user_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7)
+			aircraft_user_id,
+			lobby_id	
+		) VALUES ($1, $2, $3, $4, $5, $6, $7,$8)
 		RETURNING id;
 	`
 	towerId := -1
 	aircraftId := -1
-	/*if role == "tower" {
+	if role == "tower" {
 		towerId = userId
 	} else {
 		aircraftId = userId
-	}*/
+	}
 
 	var id int
 	err := s.db.QueryRow(
@@ -156,6 +159,7 @@ func (s *ScenarioStore) StoreSimulation(scenarioId int, role, inputType, scenari
 		mode,
 		towerId, // assuming same user for tower and aircraft
 		aircraftId,
+		lobbyCode,
 	).Scan(&id)
 
 	if err != nil {
@@ -171,6 +175,9 @@ func (s *ScenarioStore) StoreSimulation(scenarioId int, role, inputType, scenari
 		Mode:                      mode,
 		TowerUserId:               towerId,
 		AircraftUserId:            aircraftId,
+	}
+	if lobbyCode != "" {
+		simulation.LobbyCode = lobbyCode
 	}
 
 	return simulation, nil
@@ -316,4 +323,81 @@ func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcrip
 	}
 	return Transcript{Messages: messages}, nil
 
+}
+
+func (s *ScenarioStore) GetUserRoleForSimulation(simulationId int) (string, error) {
+	query := `SELECT simulations.tower_user_id, simulations.aircraft_user_id FROM simulations WHERE id = ?`
+	rows, err := s.db.Query(query, simulationId)
+	if err != nil {
+		return "", err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var towerUserId, aircraftUserId int
+		if err := rows.Scan(&towerUserId, &aircraftUserId); err != nil {
+			return "", err
+		}
+		if towerUserId != -1 {
+			return "aircraft", nil
+		} else {
+			return "tower", nil
+		}
+	}
+	return "", nil
+}
+
+func (s *ScenarioStore) GetSimulationByLobbyCode(lobbyCode string) (Simulation, error) {
+	query := `SELECT 
+		s.id, 
+		s.scenario_id, 
+		s.input_type, 
+		s.scenario_type, 
+		s.simulation_advancement_type, 
+		s.mode, 
+		s.tower_user_id, 
+		s.aircraft_user_id 
+	FROM simulations s 
+	WHERE lobby_id = ?`
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return Simulation{}, err
+	}
+	defer stmt.Close()
+	var simulation Simulation
+	err = stmt.QueryRow(lobbyCode).Scan(
+		&simulation.Id,
+		&simulation.ScenarioId,
+		&simulation.InputType,
+		&simulation.ScenarioType,
+		&simulation.SimulationAdvancementType,
+		&simulation.Mode,
+		&simulation.TowerUserId,
+		&simulation.AircraftUserId,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return Simulation{}, errors.New("simulation not found")
+		}
+		return Simulation{}, err
+	}
+	return simulation, nil
+}
+
+func (s *ScenarioStore) UpdateSimulationRoleIds(simulationId, userId int, role string) error {
+	var query string
+	if role == "tower" {
+		query = `UPDATE simulations SET tower_user_id = ? WHERE id = ?`
+	} else if role == "aircraft" {
+		query = `UPDATE simulations SET aircraft_user_id = ? WHERE id = ?`
+	}
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	_, err = stmt.Exec(userId, simulationId)
+	if err != nil {
+		return err
+	}
+	return nil
 }

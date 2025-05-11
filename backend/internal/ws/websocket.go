@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/coder/websocket"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"net/http"
 	"sync"
@@ -41,11 +42,44 @@ func getOrCreateLobby(code string) *Lobby {
 	return lobby
 }
 
-func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, store stores.ScenarioStore) {
+func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, store stores.ScenarioStore, tokenStore *stores.TokenStore) {
 	lobbyCode := r.URL.Query().Get("lobby")
 	if lobbyCode == "" {
 		http.Error(w, "lobby code required", http.StatusBadRequest)
 		return
+	}
+
+	lobby := getOrCreateLobby(lobbyCode)
+
+	token := r.Header.Get("Authorization")
+
+	user, err := tokenStore.GetUserByToken(token)
+	role := ""
+	if err != nil {
+		encoder.EncodeError(w, 401, err, err.Error())
+	}
+	userId := user.ID
+	simulation, err := store.GetSimulationByLobbyCode(lobbyCode)
+	if err != nil {
+		encoder.EncodeError(w, 500, err, err.Error())
+		return
+	}
+
+	if simulation.TowerUserId != userId && simulation.AircraftUserId != userId { //user is not in simulation
+		if simulation.TowerUserId == -1 {
+			role = "tower"
+		} else {
+			role = "aircraft"
+		}
+		err = store.UpdateSimulationRoleIds(simulation.Id, userId, role)
+		if err != nil {
+			encoder.EncodeError(w, 500, err, err.Error())
+			return
+		}
+	} else if simulation.TowerUserId == userId {
+		role = "tower"
+	} else if simulation.AircraftUserId == userId {
+		role = "aircraft"
 	}
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"*"}})
@@ -60,7 +94,8 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, s
 		send: make(chan []byte, 64),
 	}
 
-	lobby := getOrCreateLobby(lobbyCode)
+	client.send <- []byte(fmt.Sprintf(`{"type":"role","content":"%s"}`, role))
+
 	addClientToLobby(lobby, client)
 
 	// send existing messages to client
@@ -168,8 +203,8 @@ func broadcastToLobby(lobby *Lobby, data []byte, sender *Client) {
 		})
 		fmt.Println("Lobby broadcast and appended messaage:", lobby.Code, lobby.Messages)
 	}
-
 	for client := range lobby.clients {
+		fmt.Println("Lobby broadcast:", lobby.Code)
 		if client != sender {
 			select {
 			case client.send <- data:

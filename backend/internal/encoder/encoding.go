@@ -38,7 +38,9 @@ func Decode[T any](r *http.Request) (T, error) {
 
 func EncodeError(w http.ResponseWriter, status int, data interface{}, errMsg string) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
+	if status != http.StatusOK {
+		w.WriteHeader(status) // statusOK is implicit when one calls write
+	}
 
 	response := APIResponse{
 		Success: errMsg == "",

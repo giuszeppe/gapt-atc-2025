@@ -1,44 +1,52 @@
 package stores
 
-type MemoryStore[T comparable] struct {
-	items []T
-	zz    chan T
+import "errors"
+
+type TokenStore struct {
+	items map[string]User
+	zz    chan User
 }
 
-func NewMemoryStore[T comparable]() *MemoryStore[T] {
-	m := MemoryStore[T]{
-		items: []T{},
-		zz:    make(chan T),
+func NewTokenStore() *TokenStore {
+	m := TokenStore{
+		items: make(map[string]User),
+		zz:    make(chan User),
 	}
 	go m.start()
 	return &m
 }
 
-func (m *MemoryStore[T]) start() {
+func (m *TokenStore) start() {
 	for {
 		select {
-		case x := <-m.zz:
-			m.items = append(m.items, x)
+		case user := <-m.zz:
+			m.items[user.Token] = user
 		}
 	}
 }
 
-func (m *MemoryStore[T]) Store(x T) error {
+func (m *TokenStore) Store(x User) error {
 	m.zz <- x
-    return nil
+	return nil
 }
 
-func (m *MemoryStore[T]) View() ([]T, error) {
-	dst := make([]T, len(m.items))
-	copy(dst, m.items)
-	return dst, nil
-}
-
-func (m *MemoryStore[T]) Exist(x T) (bool, error) {
-	for _, item := range m.items {
-		if item == x {
-			return true, nil
-		}
+func (m *TokenStore) View() (map[string]User, error) {
+	ret := make(map[string]User)
+	for k, v := range m.items {
+		ret[k] = v
 	}
-	return false, nil
+	return ret, nil
+}
+
+func (m *TokenStore) Exist(x User) (bool, error) {
+	_, ok := m.items[x.Token]
+	return ok, nil
+}
+
+func (m *TokenStore) GetUserByToken(t string) (User, error) {
+	usr, ok := m.items[t]
+	if !ok {
+		return usr, errors.New("user not foundddd")
+	}
+	return usr, nil
 }

@@ -7,16 +7,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-func Login(userStore stores.UserStore, username, password string) bool {
+func Login(userStore stores.UserStore, username, password string) (stores.User, bool) {
 	// Retrieve the hashed password from the database
 	user, err := userStore.GetUserWithUsername(username)
 	if err != nil {
-		return false
+		return stores.User{}, false
 	}
 
 	// Compare the provided password with the hashed password
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password))
-	return err == nil
+	return user, err == nil
 }
 
 func RandomHex(n int) (string, error) {

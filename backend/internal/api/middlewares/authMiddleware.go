@@ -7,11 +7,11 @@ import (
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 )
 
-func Auth(h http.Handler, tokenStore stores.Store[string]) http.Handler {
+func Auth(h http.Handler, tokenStore stores.TokenStore) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		v := r.Header.Get("Authorization")
-		exists, _ := tokenStore.Exist(v)
-		if !exists {
+		_, err := tokenStore.GetUserByToken(v)
+		if err != nil {
 			encoder.EncodeError(w, http.StatusUnauthorized, nil, "User not authorized")
 			return
 		}

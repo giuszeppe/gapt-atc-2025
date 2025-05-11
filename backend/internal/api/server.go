@@ -27,7 +27,14 @@ func NewServer(
 		// Config,
 	)
 	var handler http.Handler = mux
-	handler = cors.Default().Handler(handler)
+	c := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowCredentials: true,
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"*"},
+		Debug:            false,
+	})
+	handler = c.Handler(handler)
 	return handler
 }
 

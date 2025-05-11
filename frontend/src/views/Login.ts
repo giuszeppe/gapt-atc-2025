@@ -16,7 +16,7 @@ export default defineComponent({
         username: "admin",
         password: "password",
       });
-      store.userToken = `Bearer ${response.data.data.token}`;
+      store.userToken = response.data.data.token;
       router.push({ name: "index" });
     }
 

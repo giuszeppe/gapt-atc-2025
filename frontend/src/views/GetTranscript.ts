@@ -1,3 +1,4 @@
+import { useStore } from "@/store/store"
 import axios from "axios"
 import { defineComponent, onMounted, ref } from "vue"
 
@@ -10,12 +11,16 @@ export default defineComponent({
     },
   },
   setup(props) {
-
+    const store = useStore()
     const transcript = ref<any>("")
 
     onMounted(async () => {
       console.log(props.id)
-      const response = await axios.get(`http://localhost:8080/get-transcripts/${props.id}`)
+      const response = await axios.get(`http://localhost:8080/get-transcripts/${props.id}`, {
+        headers: {
+          Authorization: `Bearer ${store.userToken}`,
+        },
+      })
       transcript.value = response.data.data
       console.log(transcript.value)
     })

@@ -92,9 +92,14 @@ export default defineComponent({
 
     watch(leftPanelMessages.value, async (newVal) => {
       if (newVal.length === stepCount.value) {
-        await axios.post("http://localhost:8080/end-simulation", {
+        await axios.post(
+          "http://localhost:8080/end-simulation", {
           simulation_id: simulationId,
           messages: leftPanelMessages.value,
+        }, {
+          headers: {
+            "Authorization": store.userToken,
+          },
         });
         showEndModal.value = true;
       }

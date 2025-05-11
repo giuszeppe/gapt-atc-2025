@@ -16,7 +16,7 @@ type RequestData struct {
 }
 
 type TokenResponse struct {
-	Token string
+	Token string `json:"token"`
 }
 
 func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenStore stores.Store[string]) http.Handler {

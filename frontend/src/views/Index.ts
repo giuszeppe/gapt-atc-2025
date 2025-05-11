@@ -79,6 +79,9 @@ export default defineComponent({
     async function requestScenarios(type: string) {
       const response = await axios.get("http://localhost:8080/get-scenarios", {
         params: { type },
+        headers: {
+          "Authorization": store.userToken,
+        },
       });
       const scenariosList = response.data.data.map((item: { name: string }) => item.name) as string[];
       const simulationStep = steps.find(step => step.title === "simulation");
@@ -94,6 +97,10 @@ export default defineComponent({
       const response = await axios.post("http://localhost:8080/post-simulation", {
         scenario_id: 1,
         mode,
+      }, {
+        headers: {
+          "Authorization": store.userToken,
+        },
       });
 
       store.simulationInput = response.data.data.steps[0];
@@ -159,12 +166,12 @@ export default defineComponent({
       selections,
       currentStep,
       isComplete,
-      handleSelection,
       showSelectionFlow,
       showJoinLobbyInput,
       lobbyCodeInput,
       joinLobbyError,
       joinLobby,
+      handleSelection,
     };
   }
 });

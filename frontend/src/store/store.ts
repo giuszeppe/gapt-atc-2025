@@ -3,6 +3,8 @@ import { defineStore } from 'pinia'
 import { ref, watch } from 'vue'
 
 export const useStore = defineStore('store', () => {
+  const userToken = ref<string>(localStorage.getItem('userToken') || null!)
+
   const userRole = ref<Role | null>(localStorage.getItem('userRole') as Role || null)
   const inputType = ref<InputType | null>(localStorage.getItem('inputType') as InputType || null)
   const simulationOutline = ref<any>(JSON.parse(localStorage.getItem('simulationOutline')!))
@@ -44,5 +46,9 @@ export const useStore = defineStore('store', () => {
     localStorage.setItem('simulationId', JSON.stringify(newValue))
   })
 
-  return { userRole, inputType, simulationOutline, simulationInput, lobbyCode, isMultiplayer, isPlayerInLobby, simulationId }
+  watch(userToken, (newValue) => {
+    localStorage.setItem('userToken', newValue)
+  })
+
+  return { userRole, inputType, simulationOutline, simulationInput, lobbyCode, isMultiplayer, isPlayerInLobby, simulationId, userToken }
 })

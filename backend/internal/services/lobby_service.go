@@ -5,17 +5,26 @@ import (
 	"errors"
 	"fmt"
 	"github.com/coder/websocket"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/ws"
 	"log/slog"
 	"math/rand/v2"
 	"net/http"
+	"strings"
 	"sync"
 )
 
 func HandleMultiplayerLobbyWebsocket(logger *slog.Logger, scenarioStore stores.ScenarioStore, tokenStore *stores.TokenStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
+			authToken := strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), " ")[1]
+			_, err := tokenStore.GetUserByToken("Bearer " + authToken)
+			if err != nil {
+				encoder.EncodeError(w, http.StatusUnauthorized, err, "User not authorized")
+				return
+			}
+
 			ws.UpgradeConnectionToLobbyWebsocket(w, r, scenarioStore, tokenStore)
 		},
 	)

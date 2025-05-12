@@ -23,6 +23,6 @@ func addRoutes(
 	mux.Handle("/end-simulation", middlewares.Auth(services.HandleEndSimulation(logger, scenarioStore), tokenStore))
 	mux.Handle("/get-transcripts", middlewares.Auth(services.HandleGetTranscripts(logger, scenarioStore), tokenStore))
 	mux.Handle("/get-transcripts/{id}", middlewares.Auth(services.HandleGetTranscript(logger, scenarioStore), tokenStore))
-	mux.Handle("/simulation-lobby", middlewares.Auth(services.HandleMultiplayerLobbyWebsocket(logger, scenarioStore, tokenStore), tokenStore))
+	mux.Handle("/simulation-lobby", services.HandleMultiplayerLobbyWebsocket(logger, scenarioStore, tokenStore))
 	mux.Handle("/", http.NotFoundHandler())
 }

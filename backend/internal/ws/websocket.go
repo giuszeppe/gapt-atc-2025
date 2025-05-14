@@ -3,10 +3,12 @@ package ws
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/coder/websocket"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
+	"log/slog"
 	"net/http"
 	"sync"
 )
@@ -42,45 +44,32 @@ func getOrCreateLobby(code string) *Lobby {
 	return lobby
 }
 
-func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, store stores.ScenarioStore, tokenStore *stores.TokenStore) {
-	lobbyCode := r.URL.Query().Get("lobby")
-	if lobbyCode == "" {
-		http.Error(w, "lobby code required", http.StatusBadRequest)
-		return
-	}
-
-	lobby := getOrCreateLobby(lobbyCode)
-
-	token := r.Header.Get("Authorization")
-
-	user, err := tokenStore.GetUserByToken(token)
-	role := ""
-	if err != nil {
-		encoder.EncodeError(w, 401, err, err.Error())
-	}
-	userId := user.ID
-	simulation, err := store.GetSimulationByLobbyCode(lobbyCode)
-	if err != nil {
-		encoder.EncodeError(w, 500, err, err.Error())
-		return
-	}
-
+func getUserRole(simulation stores.Simulation, userId int, store stores.ScenarioStore) (string, error) {
+	var role string
 	if simulation.TowerUserId != userId && simulation.AircraftUserId != userId { //user is not in simulation
 		if simulation.TowerUserId == -1 {
 			role = "tower"
 		} else {
 			role = "aircraft"
 		}
-		err = store.UpdateSimulationRoleIds(simulation.Id, userId, role)
-		if err != nil {
-			encoder.EncodeError(w, 500, err, err.Error())
-			return
-		}
 	} else if simulation.TowerUserId == userId {
 		role = "tower"
 	} else if simulation.AircraftUserId == userId {
 		role = "aircraft"
 	}
+	err := store.UpdateSimulationRoleIds(simulation.Id, userId, role)
+	return role, err
+}
+
+func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWriter, r *http.Request, store stores.ScenarioStore, tokenStore *stores.TokenStore) {
+	lobbyCode := r.URL.Query().Get("lobby")
+	if lobbyCode == "" {
+		http.Error(w, "lobby code required", http.StatusBadRequest)
+		logger.Error("Lobby code required", errors.New("lobby code required"))
+		return
+	}
+
+	lobby := getOrCreateLobby(lobbyCode)
 
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"*"}})
 	conn.SetReadLimit(-1)
@@ -94,6 +83,32 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, s
 		send: make(chan []byte, 64),
 	}
 
+	// Get Token from Connection
+	_, data, err := client.conn.Read(r.Context())
+	authToken := string(data)
+	logger.Info("Auth token", "token", authToken)
+
+	user, err := tokenStore.GetUserByToken(authToken)
+	if err != nil {
+		logger.Error("Error getting user by token", "error", err)
+		client.conn.Close(websocket.StatusInternalError, "User not authorized")
+		return
+	}
+	userId := user.ID
+	simulation, err := store.GetSimulationByLobbyCode(lobbyCode)
+	if err != nil {
+		// close ws connection and return error
+		logger.Error("Error getting simulation by lobby code", "error", err)
+		client.conn.Close(websocket.StatusInternalError, "Simulation not found")
+		return
+	}
+	role, err := getUserRole(simulation, userId, store)
+	if err != nil {
+		logger.Error("Error getting user role", "error", err)
+		return
+	}
+
+	logger.Info("Sending User role", "userId", userId, "role", role)
 	client.send <- []byte(fmt.Sprintf(`{"type":"role","content":"%s"}`, role))
 
 	addClientToLobby(lobby, client)
@@ -102,7 +117,8 @@ func UpgradeConnectionToLobbyWebsocket(w http.ResponseWriter, r *http.Request, s
 	for _, message := range lobby.Messages {
 		msgJson, err := json.Marshal(message)
 		if err != nil {
-			fmt.Println(err)
+			logger.Error("Error marshalling message", "error", err)
+			encoder.EncodeError(w, 500, err, err.Error())
 			return
 		}
 		client.send <- msgJson

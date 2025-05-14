@@ -13,8 +13,8 @@ export default defineComponent({
 
     async function handleLogin() {
       const response = await axios.post("http://localhost:8080/login", {
-        username: "admin",
-        password: "password",
+        username: username.value,
+        password: password.value,
       });
       store.userToken = response.data.data.token;
       router.push({ name: "index" });

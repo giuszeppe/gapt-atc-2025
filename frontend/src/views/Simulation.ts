@@ -43,6 +43,9 @@ export default defineComponent({
 
         socket.value.onopen = () => {
           console.log("WebSocket connection established.");
+          if(socket.value ){
+            socket.value.send(store.userToken)
+          }
         };
 
         socket.value.onmessage = async (event) => {

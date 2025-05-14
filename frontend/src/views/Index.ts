@@ -115,6 +115,7 @@ export default defineComponent({
 
         socket.onopen = () => {
           console.log("WebSocket connection established.");
+          socket.send(store.userToken)
         };
 
         socket.onmessage = (event) => {
@@ -139,6 +140,10 @@ export default defineComponent({
       try {
         console.log(lobbyCodeInput.value);
         const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${lobbyCodeInput.value}`);
+        socket.onopen = () => {
+          console.log("WebSocket connection established.");
+          socket.send(store.userToken);
+        };
         router.push({ name: "simulation" });
       } catch (error) {
         joinLobbyError.value = "Lobby not found or already full";

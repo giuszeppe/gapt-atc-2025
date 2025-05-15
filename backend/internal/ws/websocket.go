@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/coder/websocket"
-	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"log/slog"
 	"net/http"
@@ -23,6 +22,15 @@ type Lobby struct {
 	mutex    sync.RWMutex
 	Messages []stores.Message
 	Code     string
+}
+
+type InitializationMessage struct {
+	InputType     string             `json:"input_type"`
+	Role          string             `json:"role"`
+	Steps         []stores.Step      `json:"steps"`
+	ExtendedSteps []stores.Step      `json:"extended_steps"`
+	SimulationId  int                `json:"simulation_id"`
+	Messages      []WebsocketMessage `json:"messages"`
 }
 
 var lobbies = make(map[string]*Lobby)
@@ -83,6 +91,8 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 		send: make(chan []byte, 64),
 	}
 
+	initMsg := InitializationMessage{}
+
 	// Get Token from Connection
 	_, data, err := client.conn.Read(r.Context())
 	authToken := string(data)
@@ -95,6 +105,8 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 		return
 	}
 	userId := user.ID
+
+	// Get Simulation by Lobby Code
 	simulation, err := store.GetSimulationByLobbyCode(lobbyCode)
 	if err != nil {
 		// close ws connection and return error
@@ -102,38 +114,47 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 		client.conn.Close(websocket.StatusInternalError, "Simulation not found")
 		return
 	}
+	initMsg.SimulationId = simulation.Id
+	initMsg.InputType = simulation.InputType
+
+	// Get User Role
 	role, err := getUserRole(simulation, userId, store)
 	if err != nil {
 		logger.Error("Error getting user role", "error", err)
 		return
 	}
 
-	logger.Info("Sending User role", "userId", userId, "role", role)
-	client.send <- []byte(fmt.Sprintf(`{"type":"role","content":"%s"}`, role))
+	logger.Info("User role", "userId", userId, "role", role)
+	initMsg.Role = role
+
+	// Get Simulation Steps
 	steps, err := store.GetScenarioStepsForId(simulation.ScenarioId)
 	if err != nil {
 		logger.Error("Error getting simulation steps", "error", err)
 		return
 	}
-	stepsJson, err := json.Marshal(steps)
-	if err != nil {
-		logger.Error("Error marshalling steps", "error", err)
-		return
-	}
-	client.send <- []byte(fmt.Sprintf(`{"type":"steps","content":"%s"}`, stepsJson))
+	initMsg.Steps = steps[0]
+	initMsg.ExtendedSteps = steps[1]
 
 	addClientToLobby(lobby, client)
 
 	// send existing messages to client
+	initMsg.Messages = make([]WebsocketMessage, len(lobby.Messages))
 	for _, message := range lobby.Messages {
-		msgJson, err := json.Marshal(message)
-		if err != nil {
-			logger.Error("Error marshalling message", "error", err)
-			encoder.EncodeError(w, 500, err, err.Error())
-			return
-		}
-		client.send <- msgJson
+		initMsg.Messages = append(initMsg.Messages, WebsocketMessage{
+			Type:    "text",
+			Content: json.RawMessage(message.Text),
+			Role:    message.Role,
+		})
 	}
+
+	// send initialization message to client
+	initJson, err := json.Marshal(initMsg)
+	if err != nil {
+		logger.Error("Error marshalling init message", "error", err)
+		return
+	}
+	client.send <- []byte(fmt.Sprintf(`{"type":"init","content":%s}`, initJson))
 
 	go clientWriter(client)
 	clientReader(lobby, client, r, store)

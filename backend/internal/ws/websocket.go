@@ -110,6 +110,17 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 
 	logger.Info("Sending User role", "userId", userId, "role", role)
 	client.send <- []byte(fmt.Sprintf(`{"type":"role","content":"%s"}`, role))
+	steps, err := store.GetScenarioStepsForId(simulation.ScenarioId)
+	if err != nil {
+		logger.Error("Error getting simulation steps", "error", err)
+		return
+	}
+	stepsJson, err := json.Marshal(steps)
+	if err != nil {
+		logger.Error("Error marshalling steps", "error", err)
+		return
+	}
+	client.send <- []byte(fmt.Sprintf(`{"type":"steps","content":"%s"}`, stepsJson))
 
 	addClientToLobby(lobby, client)
 

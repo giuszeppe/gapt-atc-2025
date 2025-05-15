@@ -49,7 +49,10 @@ func Run(
 	srv := NewServer(logger, tokenStore, userStore, scenarioStore)
 
 	logger.Info("Serving on" + getenv("APP_URL"))
-	http.ListenAndServe(getenv("APP_URL"), srv)
+	err := http.ListenAndServe(getenv("APP_URL"), srv)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

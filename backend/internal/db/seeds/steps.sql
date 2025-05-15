@@ -1,5 +1,5 @@
 INSERT INTO steps (id, scenario_id, idx, role, text)
-VALUES (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
+VALUES
        (2, 1, 2, 'aircraft', 'Malta Ground, KM102, request taxi to runway 31.'),
        (3, 1, 3, 'tower', 'KM102, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
        (4, 1, 4, 'aircraft', 'Malta Tower, KM102, holding short runway 31 at C1, ready for departure.'),
@@ -9,7 +9,6 @@ VALUES (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
        (8, 1, 8, 'tower', 'KM102, roger, contact Malta Radar on 128.15.'),
        (9, 1, 9, 'aircraft', 'Malta Radar, KM102, climbing through 1500 feet.'),
 
-       (10, 2, 1, 'system', 'Environment: Moderate rain reported, wet runway conditions.'),
        (11, 2, 2, 'aircraft', 'Malta Ground, RYR4735, request taxi to runway 31, aware of wet runway conditions.'),
        (12, 2, 3, 'tower',
         'RYR4735, taxi to holding point C1 via Alpha and Charlie. Caution: braking action reported medium. Contact Tower on 118.3 at C1.'),
@@ -21,7 +20,6 @@ VALUES (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
        (17, 2, 8, 'tower', 'RYR4735, roger, radar contact, contact Malta Radar on 128.15.'),
        (18, 2, 9, 'aircraft', 'Malta Radar, RYR4735, climbing through 1500 feet, moderate turbulence encountered.'),
 
-       (19, 3, 1, 'system', 'Environment: Bird strike on takeoff, returning to the field.'),
        (20, 3, 2, 'aircraft', 'Malta Ground, LH1276, request taxi to runway 31.'),
        (21, 3, 3, 'tower', 'LH1276, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
        (22, 3, 4, 'aircraft', 'Malta Tower, LH1276, holding short runway 31 at C1, ready for departure.'),
@@ -33,7 +31,6 @@ VALUES (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
         'LH1276, roger PAN PAN, turn left heading 270, climb not above 3000 feet, cleared to return runway 31. Fire and rescue alerted.'),
        (27, 3, 9, 'aircraft', 'Turning left heading 270, not above 3000 feet, returning runway 31, LH1276.'),
 
-       (28, 4, 1, 'system', 'Environment: Engine failure reported, declaring emergency.'),
        (29, 4, 2, 'aircraft', 'Malta Ground, KM102, request taxi to runway 31.'),
        (30, 4, 3, 'tower', 'KM102, taxi to holding point C1 via Alpha and Charlie, contact Tower on 118.3 at C1.'),
        (31, 4, 4, 'aircraft', 'Malta Tower, KM102, holding short runway 31 at C1, ready for departure.'),
@@ -46,8 +43,7 @@ VALUES (1, 1, 1, 'system', 'Environment: Clear skies and calm winds.'),
         'Turning right heading 090, maintain 2000 feet, cleared visual approach runway 31, KM102.');
 
 INSERT INTO extended_steps (id, scenario_id, idx, role, text)
-VALUES (1, 1, 1, 'system',
-        'The weather is clear, with skies free of clouds and calm wind conditions, providing an ideal environment for flight operations.'),
+VALUES
        (2, 1, 2, 'aircraft',
         'The pilot of KM102 contacts Malta Ground, requesting clearance to taxi to runway 31 for departure.'),
        (3, 1, 3, 'tower',
@@ -64,8 +60,6 @@ VALUES (1, 1, 1, 'system',
        (9, 1, 9, 'aircraft',
         'KM102 checks in with Malta Radar, confirming it is climbing through 1500 feet, continuing its ascent.'),
 
-       (10, 2, 1, 'system',
-        'The weather conditions are challenging, with moderate rain and a wet runway reported, which may affect takeoff and landing operations.'),
        (11, 2, 2, 'aircraft',
         'RYR4735 contacts Malta Ground, requesting taxi clearance to runway 31, while acknowledging the wet runway conditions.'),
        (12, 2, 3, 'tower',
@@ -83,8 +77,6 @@ VALUES (1, 1, 1, 'system',
        (18, 2, 9, 'aircraft',
         'RYR4735 checks in with Malta Radar, reporting a climb through 1500 feet and encountering moderate turbulence.'),
 
-       (19, 3, 1, 'system',
-        'The situation is critical, with a bird strike reported on takeoff, prompting an emergency return to the airfield.'),
        (20, 3, 2, 'aircraft', 'LH1276 requests clearance from Malta Ground to taxi to runway 31.'),
        (21, 3, 3, 'tower',
         'Malta Ground authorizes LH1276 to taxi to holding point C1 via Alpha and Charlie, advising to switch to Tower on 118.3 at C1.'),
@@ -97,8 +89,6 @@ VALUES (1, 1, 1, 'system',
         'Malta Tower acknowledges the PAN PAN declaration, providing instructions for a left turn to heading 270, climbing no higher than 3000 feet, and confirming that emergency services are alerted.'),
        (27, 3, 9, 'aircraft', 'LH1276 confirms compliance with instructions and begins the return to the airfield.'),
 
-       (28, 4, 1, 'system',
-        'A critical situation arises as KM102 reports an engine failure shortly after takeoff, prompting an immediate emergency return.'),
        (29, 4, 2, 'aircraft', 'KM102 requests taxi clearance to runway 31 from Malta Ground.'),
        (30, 4, 3, 'tower',
         'Malta Ground grants KM102 clearance to taxi to holding point C1 via Alpha and Charlie, advising a switch to Tower on 118.3 at C1.'),

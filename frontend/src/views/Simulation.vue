@@ -21,10 +21,12 @@
         <template v-if="inputType === 'text' || inputType === 'speech'">
           <input v-model="playerInput" @keyup.enter="handlePlayerInput"
             placeholder="Type your message and press Enter..." />
-          <button @click="toggleListening" v-if="inputType == 'speech'" :disabled="!isUserTurn">
+          <button v-if="inputType === 'speech'" :disabled="!isUserTurn" @mousedown="startListening"
+            @mouseup="stopListening" @mouseleave="stopListening">
             <font-awesome-icon icon="fa-solid fa-microphone" />
-            {{ isListening ? 'Stop' : 'Speak' }}
+            {{ isListening ? 'Release to stop' : 'Hold to speak' }}
           </button>
+
           <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
         </template>
 

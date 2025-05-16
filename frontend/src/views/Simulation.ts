@@ -237,29 +237,36 @@ export default defineComponent({
     }
 
 
-    function toggleListening() {
-      if (isListening.value) {
-        stop(async () => {
-          playerInput.value = transcript.value.trim();
-          if (!outputBuffer.value) return
-          if (socket.value && outputBuffer.value) {
-            const channelData = outputBuffer.value.getChannelData(0);
-
-            const float32Array = new Float32Array(channelData.length);
-            float32Array.set(channelData);
-            const uint8Array = new Uint8Array(float32Array.buffer);
-
-            const base64 = uint8ToBase64(uint8Array)
-            console.log("BASE&$", base64);
-            socket.value.send(JSON.stringify({ type: "audio", content: base64 }));
-
-            replayAudio((await base64ToAudioBuffer(base64)));
-          }
-        });
-      } else {
+    function startListening() {
+      if (!isListening.value) {
         start();
       }
     }
+
+    function stopListening() {
+      if (isListening.value) {
+        stop(async () => {
+          playerInput.value = transcript.value.trim();
+
+          if (!outputBuffer.value) return;
+
+          if (socket.value) {
+            const channelData = outputBuffer.value.getChannelData(0);
+            const float32Array = new Float32Array(channelData.length);
+            float32Array.set(channelData);
+            const uint8Array = new Uint8Array(float32Array.buffer);
+            const base64 = uint8ToBase64(uint8Array);
+            console.log("BASE&$", base64);
+
+            socket.value.send(JSON.stringify({ type: "audio", content: base64 }));
+
+            const buffer = await base64ToAudioBuffer(base64);
+            replayAudio(buffer);
+          }
+        });
+      }
+    }
+
 
     // #region TEXT
     function formatUserInput(userInput: string, expectedInput: string): string {
@@ -430,7 +437,8 @@ export default defineComponent({
       lobbyCode: store.lobbyCode,
       isMultiplayer: store.isMultiplayer,
       toggleWordSelection,
-      toggleListening,
+      startListening,
+      stopListening,
       handlePlayerInput,
       selectWord,
       deselectWord,

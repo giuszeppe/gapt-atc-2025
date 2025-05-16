@@ -3,12 +3,16 @@
     <div class="left-panel">
       <div class="chat-container">
         <div v-for="(message, index) in leftPanelMessages" :key="'left-' + index"
-          :class="['chat-message', message.role === userRole ? 'right' : 'left']">
+          :class="['message-row', message.role === userRole ? 'right' : 'left']">
+          <div class="role-avatar">
+            <font-awesome-icon
+              :icon="message.role === 'aircraft' ? 'fa-solid fa-plane' : 'fa-solid fa-tower-observation'" />
+          </div>
           <div class="chat-bubble">
-            <div v-if="message.role === userRole" v-html="message.content"></div>
-            <div v-else v-html="message.content"></div>
+            <div v-html="message.content"></div>
           </div>
         </div>
+
       </div>
 
       <VoiceVisualizer :volume="volume" v-if="inputType == 'speech' && isListening" />
@@ -49,15 +53,16 @@
 
     <div class="right-panel">
       <div v-if="lobbyCode">LOBBY CODE: {{ lobbyCode }}</div>
-      {{ isUserTurn }}
-
       <div class="chat-container">
-        <div v-for="(step, index) in rightPanelSteps" :key="'right-' + index"
-          :class="['chat-message', step.role === userRole ? 'right' : 'left']">
-          <div class="chat-bubble">
-            {{ step.text }}
+        <div v-for="(step, index) in rightPanelSteps" :key="'right-' + index" class="message-row"
+          :class="step.role === userRole ? 'right' : 'left'">
+          <div class="role-avatar">
+            <font-awesome-icon
+              :icon="step.role === 'aircraft' ? 'fa-solid fa-plane' : 'fa-solid fa-tower-observation'" />
           </div>
+          <div class="chat-bubble">{{ step.text }}</div>
         </div>
+
       </div>
     </div>
 
@@ -119,7 +124,6 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  padding: 1rem;
   overflow-y: auto;
   background-color: #121212;
 }
@@ -219,10 +223,65 @@
 
 .block.selected {
   background-color: #2563eb;
-  /* lighter blue for selected output */
+}
+
+.role-icon {
+  margin-right: 0.5rem;
+  color: #ccc;
 }
 
 .invisible {
   visibility: hidden;
+}
+
+.message-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  max-width: 100%;
+
+  &.right {
+    flex-direction: row-reverse;
+
+    .role-avatar {
+      background-color: @primary-blue;
+      margin-left: 0.5rem;
+    }
+
+    .chat-bubble {
+      background-color: @primary-blue;
+    }
+  }
+
+  &.left {
+    flex-direction: row;
+
+    .role-avatar {
+      background-color: @primary-gray;
+      margin-right: 0.5rem;
+    }
+
+    .chat-bubble {
+      background-color: @primary-gray;
+    }
+  }
+
+  .chat-bubble {
+    padding: 0.8rem 1rem;
+    border-radius: 1rem;
+    word-break: break-word;
+    max-width: 80%;
+  }
+}
+
+.role-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
 }
 </style>

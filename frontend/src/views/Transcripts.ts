@@ -11,7 +11,7 @@ export default defineComponent({
     onMounted(async () => {
       const response = await axios.get("http://localhost:8080/get-transcripts", {
         headers: {
-          Authorization: `Bearer ${store.userToken}`,
+          'Authorization': `${store.userToken}`,
         },
       });
 

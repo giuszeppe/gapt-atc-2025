@@ -126,7 +126,10 @@ export default defineComponent({
       if (mode === "multiplayer") store.isMultiplayer = true;
 
       router.push({ name: "simulation" });
+    }
 
+    function viewTranscripts() {
+      router.push({ name: "transcripts" });
     }
 
     async function joinLobby() {
@@ -155,6 +158,7 @@ export default defineComponent({
       joinLobbyError,
       joinLobby,
       handleSelection,
+      viewTranscripts,
     };
   }
 });

@@ -24,7 +24,7 @@
           <button v-if="inputType === 'speech'" :disabled="!isUserTurn" @mousedown="startListening"
             @mouseup="stopListening" @mouseleave="stopListening">
             <font-awesome-icon icon="fa-solid fa-microphone" />
-            {{ isListening ? 'Release to stop' : 'Hold to speak' }}
+            {{ isListening ? 'Release to stop' : 'Push to speak' }}
           </button>
 
           <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
@@ -33,16 +33,16 @@
         <template v-if="inputType == 'block'">
           <div class="block-mode">
             <div class="selected-blocks">
-              <div v-for="(word, index) in selectedWords" :key="'selected-' + index" class="block selected"
-                draggable="true" @dragstart="onDragStart(index)" @dragover.prevent @drop="onDrop(index)"
-                @click="deselectWord(word)">
-                {{ word }}
+              <div v-for="(selected, index) in selectedWords" :key="'selected-' + selected.originalIndex"
+                class="block selected" draggable="true" @dragstart="onDragStart(index)" @dragover.prevent
+                @drop="onDrop(index)" @click="deselectWord(index)">
+                {{ selected.word }}
               </div>
             </div>
 
             <div class="block-container">
               <div v-for="(word, index) in wordBlocks" :key="index" class="block"
-                :class="{ invisible: selectedWords.includes(word) }" @click="selectWord(word)">
+                :class="{ invisible: selectedWordsIndexes.includes(index) }" @click="selectWord(index)">
                 {{ word }}
               </div>
             </div>

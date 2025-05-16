@@ -4,6 +4,7 @@
       <template v-if="!showJoinLobbyInput">
         <button class="option-button" @click="showSelectionFlow = true">Start Simulation</button>
         <button class="option-button" @click="showJoinLobbyInput = true">Join Lobby</button>
+        <button class="option-button" @click="viewTranscripts">View Transcripts</button>
       </template>
 
       <div v-if="showJoinLobbyInput" class="join-lobby-input">

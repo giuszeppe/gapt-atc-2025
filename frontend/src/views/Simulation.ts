@@ -20,7 +20,6 @@ export default defineComponent({
     const showEndModal = ref<boolean>(false);
 
     const wordBlocks = ref<string[]>([]);
-    const selectedWords = ref<string[]>([]);
     const dragIndex = ref<number | null>(null)
 
     const store = useStore();
@@ -148,7 +147,7 @@ export default defineComponent({
         inputText = playerInput.value.trim();
         if (!inputText) return;
       } else if (inputType.value === "block") {
-        inputText = selectedWords.value.join(" ").trim();
+        inputText = selectedWords.value.map(w => w.word).join(" ").trim();
         if (!inputText) return;
       }
 
@@ -384,18 +383,33 @@ export default defineComponent({
       dragIndex.value = null
     }
 
-    function selectWord(word: string) {
-      if (!selectedWords.value.includes(word)) {
-        selectedWords.value.push(word)
+    const selectedWords = ref<{
+      word: string;
+      originalIndex: number;
+    }[]>([]);
+    const selectedWordsIndexes = ref<number[]>([]);
+
+    function selectWord(index: number) {
+      const word = wordBlocks.value[index];
+      if (!selectedWordsIndexes.value.includes(index)) {
+        selectedWordsIndexes.value.push(index);
+        selectedWords.value.push({ word, originalIndex: index });
       }
     }
 
-    function deselectWord(word: string) {
-      const index = selectedWords.value.indexOf(word)
-      if (index !== -1) {
-        selectedWords.value.splice(index, 1)
+    function deselectWord(selectedIndex: number) {
+      const selected = selectedWords.value[selectedIndex];
+      if (!selected) return;
+
+      const originalIndex = selected.originalIndex;
+      const pos = selectedWordsIndexes.value.indexOf(originalIndex);
+
+      if (pos !== -1) {
+        selectedWordsIndexes.value.splice(pos, 1);
+        selectedWords.value.splice(selectedIndex, 1);
       }
     }
+
 
     function shuffleArray<T>(array: T[]): T[] {
       const shuffled = array.slice();
@@ -436,6 +450,7 @@ export default defineComponent({
       selectedWordIndexes,
       lobbyCode: store.lobbyCode,
       isMultiplayer: store.isMultiplayer,
+      selectedWordsIndexes,
       toggleWordSelection,
       startListening,
       stopListening,

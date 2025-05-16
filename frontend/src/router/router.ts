@@ -20,7 +20,7 @@ const router = createRouter({
       props: true,
     },
     {
-      path: '/transcripts',
+      path: '/get-transcripts',
       name: 'transcripts',
       component: Transcripts,
     },

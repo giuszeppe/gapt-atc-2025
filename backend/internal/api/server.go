@@ -1,7 +1,6 @@
 package api
 
 import (
-	"context"
 	"github.com/rs/cors"
 	"log/slog"
 	"net/http"
@@ -15,7 +14,6 @@ func NewServer(
 	tokenStore *stores.TokenStore,
 	userStore *stores.UserStore,
 	scenarioStore *stores.ScenarioStore,
-	// config *Config,
 ) http.Handler {
 	mux := http.NewServeMux()
 	addRoutes(
@@ -24,7 +22,6 @@ func NewServer(
 		tokenStore,
 		*userStore,
 		*scenarioStore,
-		// Config,
 	)
 	var handler http.Handler = mux
 	c := cors.New(cors.Options{
@@ -39,7 +36,6 @@ func NewServer(
 }
 
 func Run(
-	ctx context.Context,
 	getenv func(string) string,
 	tokenStore *stores.TokenStore,
 	userStore *stores.UserStore,

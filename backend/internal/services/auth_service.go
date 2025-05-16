@@ -24,13 +24,13 @@ func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenSt
 		func(w http.ResponseWriter, r *http.Request) {
 			// Check if the request is a POST request
 			if r.Method != http.MethodPost {
-				encoder.EncodeError(w, http.StatusMethodNotAllowed, nil, "Method not allowed")
+				encoder.EncodeError(w, http.StatusMethodNotAllowed, nil, "Method not allowed", logger)
 				return
 			}
 
 			data, err := encoder.Decode[stores.User](r)
 			if err != nil {
-				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error(), logger)
 				return
 			}
 
@@ -54,13 +54,12 @@ func HandleLoginService(logger *slog.Logger, userStore stores.UserStore, tokenSt
 				}
 				response := TokenResponse{Token: token}
 
-				encoder.Encode(w, r, http.StatusOK, response)
+				encoder.Encode(w, r, http.StatusOK, response, logger)
 				return
 			} else {
-				encoder.EncodeError(w, http.StatusUnauthorized, nil, "Wrong Credentials")
+				encoder.EncodeError(w, http.StatusUnauthorized, nil, "Wrong Credentials", logger)
 			}
 			return
-
 		},
 	)
 }

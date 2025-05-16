@@ -3,6 +3,7 @@ package encoder
 import (
 	"encoding/json"
 	"fmt"
+	"log/slog"
 	"net/http"
 )
 
@@ -12,7 +13,7 @@ type APIResponse struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-func Encode[T any](w http.ResponseWriter, r *http.Request, status int, v T) {
+func Encode[T any](w http.ResponseWriter, r *http.Request, status int, v T, logger *slog.Logger) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	response := APIResponse{
@@ -22,9 +23,7 @@ func Encode[T any](w http.ResponseWriter, r *http.Request, status int, v T) {
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		EncodeError(w, http.StatusInternalServerError, nil, err.Error())
-	} else {
-
+		EncodeError(w, http.StatusInternalServerError, nil, err.Error(), logger)
 	}
 }
 
@@ -36,8 +35,9 @@ func Decode[T any](r *http.Request) (T, error) {
 	return v, nil
 }
 
-func EncodeError(w http.ResponseWriter, status int, data interface{}, errMsg string) error {
+func EncodeError(w http.ResponseWriter, status int, data interface{}, errMsg string, logger *slog.Logger) error {
 	w.Header().Set("Content-Type", "application/json")
+	logger.Error(errMsg)
 	if status != http.StatusOK {
 		w.WriteHeader(status) // statusOK is implicit when one calls write
 	}

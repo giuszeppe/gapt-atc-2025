@@ -1,11 +1,7 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
@@ -39,14 +35,4 @@ These commands are useful for setting up, testing, and maintaining database cons
 
 func init() {
 	rootCmd.AddCommand(databaseCmd)
-
-	// Here you will define your flags and configuration settings.
-
-	// Cobra supports Persistent Flags which will work for this command
-	// and all subcommands, e.g.:
-	// databaseCmd.PersistentFlags().String("foo", "", "A help for foo")
-
-	// Cobra supports local flags which will only run when this command
-	// is called directly, e.g.:
-	// databaseCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }

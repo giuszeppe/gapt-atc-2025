@@ -3,9 +3,9 @@ package ws
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/coder/websocket"
+	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"log/slog"
 	"net/http"
@@ -72,8 +72,7 @@ func getUserRole(simulation stores.Simulation, userId int, store stores.Scenario
 func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWriter, r *http.Request, store stores.ScenarioStore, tokenStore *stores.TokenStore) {
 	lobbyCode := r.URL.Query().Get("lobby")
 	if lobbyCode == "" {
-		http.Error(w, "lobby code required", http.StatusBadRequest)
-		logger.Error("Lobby code required", errors.New("lobby code required"))
+		encoder.EncodeError(w, http.StatusUnprocessableEntity, lobbyCode, "lobby code required", logger)
 		return
 	}
 
@@ -82,7 +81,7 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"*"}})
 	conn.SetReadLimit(-1)
 	if err != nil {
-		fmt.Println("WebSocket accept error:", err)
+		logger.Error("WebSocket accept error:", err)
 		return
 	}
 
@@ -136,7 +135,11 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 	initMsg.Steps = steps[0]
 	initMsg.ExtendedSteps = steps[1]
 
-	addClientToLobby(lobby, client)
+	err = addClientToLobby(lobby, client)
+	if err != nil {
+		logger.Error("Error adding client to lobby", err)
+		return
+	}
 
 	// send existing messages to client
 	initMsg.Messages = []WebsocketMessage{}
@@ -156,8 +159,8 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 	}
 	client.send <- []byte(fmt.Sprintf(`{"type":"init","content":%s}`, initJson))
 
-	go clientWriter(client)
-	clientReader(lobby, client, r, store)
+	go clientWriter(client, logger)
+	clientReader(lobby, client, r, store, logger)
 }
 
 type NewClientMsg struct {
@@ -165,7 +168,7 @@ type NewClientMsg struct {
 	Content string `json:"content"`
 }
 
-func addClientToLobby(lobby *Lobby, newClient *Client) {
+func addClientToLobby(lobby *Lobby, newClient *Client) error {
 	lobby.mutex.Lock()
 	defer lobby.mutex.Unlock()
 	lobby.clients[newClient] = true
@@ -178,7 +181,7 @@ func addClientToLobby(lobby *Lobby, newClient *Client) {
 			}
 			msgJson, err := json.Marshal(msg)
 			if err != nil {
-				fmt.Println(err)
+				return err
 			}
 			select {
 			case client.send <- msgJson:
@@ -187,14 +190,15 @@ func addClientToLobby(lobby *Lobby, newClient *Client) {
 	}
 
 	fmt.Println("Client joined lobby")
+	return nil
 }
 
-func removeClientFromLobby(lobby *Lobby, client *Client, store stores.ScenarioStore) {
+func removeClientFromLobby(lobby *Lobby, client *Client, store stores.ScenarioStore, logger *slog.Logger) {
 	lobby.mutex.Lock()
 	defer lobby.mutex.Unlock()
 	delete(lobby.clients, client)
 	close(client.send)
-	fmt.Println("Client left lobby")
+	logger.Info("Client left lobby", "client", client)
 	if len(lobby.clients) == 0 {
 		err := store.AddTranscriptToSimulationUsingLobbyCode(lobby.Code, lobby.Messages)
 		if err != nil {
@@ -203,27 +207,27 @@ func removeClientFromLobby(lobby *Lobby, client *Client, store stores.ScenarioSt
 	}
 }
 
-func clientReader(lobby *Lobby, client *Client, r *http.Request, store stores.ScenarioStore) {
+func clientReader(lobby *Lobby, client *Client, r *http.Request, store stores.ScenarioStore, logger *slog.Logger) {
 	defer func() {
-		removeClientFromLobby(lobby, client, store)
+		removeClientFromLobby(lobby, client, store, logger)
 		client.conn.Close(websocket.StatusNormalClosure, "closing")
 	}()
 
 	for {
 		_, data, err := client.conn.Read(r.Context())
 		if err != nil {
-			fmt.Println("Read error:", err)
+			logger.Error("Error reading message", "error", err)
 			return
 		}
-		broadcastToLobby(lobby, data, client)
+		broadcastToLobby(lobby, data, client, logger)
 	}
 }
 
-func clientWriter(client *Client) {
+func clientWriter(client *Client, logger *slog.Logger) {
 	for data := range client.send {
 		err := client.conn.Write(context.Background(), websocket.MessageBinary, data)
 		if err != nil {
-			fmt.Println("Write error:", err)
+			logger.Error("Error writing message", "error", err)
 			return
 		}
 	}
@@ -235,13 +239,13 @@ type WebsocketMessage struct {
 	Role    string          `json:"role"`
 }
 
-func broadcastToLobby(lobby *Lobby, data []byte, sender *Client) {
+func broadcastToLobby(lobby *Lobby, data []byte, sender *Client, logger *slog.Logger) {
 	lobby.mutex.RLock()
 	defer lobby.mutex.RUnlock()
 	wsMsg := WebsocketMessage{}
 	err := json.Unmarshal(data, &wsMsg)
 	if err != nil {
-		fmt.Println("Unmarshal error:", err)
+		logger.Error("Error unmarshalling message", "error", err)
 	}
 
 	if wsMsg.Type == "text" {
@@ -249,15 +253,15 @@ func broadcastToLobby(lobby *Lobby, data []byte, sender *Client) {
 			Role: wsMsg.Role,
 			Text: string(wsMsg.Content),
 		})
-		fmt.Println("Lobby broadcast and appended messaage:", lobby.Code, lobby.Messages)
+		logger.Debug("Lobby broadcasted", "message", string(wsMsg.Content))
 	}
 	for client := range lobby.clients {
-		fmt.Println("Lobby broadcast:", lobby.Code)
+		logger.Debug("Lobby broadcasted", "message", string(wsMsg.Content))
 		if client != sender {
 			select {
 			case client.send <- data:
 			default:
-				fmt.Println("Dropping message due to full send buffer")
+				logger.Info("Lobby dropped message due to full buffer", "message", string(wsMsg.Content))
 			}
 		}
 	}

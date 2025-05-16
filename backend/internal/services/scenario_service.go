@@ -15,10 +15,10 @@ func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) 
 			scenarioType := r.URL.Query().Get("type")
 			scenarios, err := scenarioStore.View(scenarioType)
 			if err != nil {
-				encoder.EncodeError(w, 500, err, err.Error())
+				encoder.EncodeError(w, 500, err, err.Error(), logger)
 				return
 			}
-			encoder.Encode(w, r, 200, scenarios)
+			encoder.Encode(w, r, 200, scenarios, logger)
 
 		},
 	)
@@ -45,14 +45,14 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			// get simulation params
 			data, err := encoder.Decode[PostScenarioRequest](r)
 			if err != nil {
-				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error(), logger)
 				return
 			}
 
 			// fetch scenario steps
 			steps, err := scenarioStore.GetScenarioStepsForId(data.Id)
 			if err != nil {
-				encoder.EncodeError(w, 500, err, err.Error())
+				encoder.EncodeError(w, 500, err, err.Error(), logger)
 				return
 			}
 
@@ -61,14 +61,14 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			fmt.Println("Token: ", token)
 			fmt.Println(tokenStore.View())
 			if err != nil {
-				encoder.EncodeError(w, 401, err, err.Error())
+				encoder.EncodeError(w, 401, err, err.Error(), logger)
 			}
 
 			simulation, lobbyCode := stores.Simulation{}, ""
 			if data.Mode == "multiplayer" {
 				lobbyCode, err = GenerateLobbyCode(scenarioStore)
 				if err != nil {
-					encoder.EncodeError(w, 500, err, err.Error())
+					encoder.EncodeError(w, 500, err, err.Error(), logger)
 					return
 				}
 			}
@@ -84,7 +84,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				lobbyCode, // Include the lobby code here
 			)
 			if err != nil {
-				encoder.EncodeError(w, 500, err, err.Error())
+				encoder.EncodeError(w, 500, err, err.Error(), logger)
 				return
 			}
 
@@ -93,7 +93,7 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 				response.LobbyCode = lobbyCode
 			}
 
-			encoder.Encode(w, r, 200, response)
+			encoder.Encode(w, r, 200, response, logger)
 		},
 	)
 }
@@ -109,17 +109,17 @@ func HandleEndSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStore
 			// get simulation params
 			data, err := encoder.Decode[EndSimulationRequest](r)
 			if err != nil {
-				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error(), logger)
 				return
 			}
 
 			// fetch scenario steps
 			err = scenarioStore.EndSimulation(data.SimulationId, data.Messages)
 			if err != nil {
-				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error(), logger)
 				return
 			}
-			encoder.Encode(w, r, http.StatusNoContent, "")
+			encoder.Encode(w, r, http.StatusNoContent, "", logger)
 		},
 	)
 }
@@ -131,10 +131,10 @@ func HandleGetTranscripts(logger *slog.Logger, scenarioStore stores.ScenarioStor
 			// fetch scenario steps
 			transcripts, err := scenarioStore.GetGroupedTranscripts()
 			if err != nil {
-				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error(), logger)
 				return
 			}
-			encoder.Encode(w, r, http.StatusOK, transcripts)
+			encoder.Encode(w, r, http.StatusOK, transcripts, logger)
 		},
 	)
 }
@@ -144,7 +144,7 @@ func HandleGetTranscript(logger *slog.Logger, scenarioStore stores.ScenarioStore
 			simulationId, err := strconv.Atoi(r.PathValue("id"))
 			if err != nil {
 				logger.Error(err.Error())
-				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error())
+				encoder.EncodeError(w, http.StatusBadRequest, nil, err.Error(), logger)
 				return
 			}
 
@@ -152,10 +152,10 @@ func HandleGetTranscript(logger *slog.Logger, scenarioStore stores.ScenarioStore
 			transcripts, err := scenarioStore.GetTranscriptBySimulationId(simulationId)
 			if err != nil {
 				logger.Error(err.Error())
-				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error(), logger)
 				return
 			}
-			encoder.Encode(w, r, http.StatusOK, transcripts)
+			encoder.Encode(w, r, http.StatusOK, transcripts, logger)
 		},
 	)
 }

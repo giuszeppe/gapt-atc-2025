@@ -18,7 +18,7 @@ export default defineComponent({
       console.log(props.id)
       const response = await axios.get(`http://localhost:8080/get-transcripts/${props.id}`, {
         headers: {
-          Authorization: `Bearer ${store.userToken}`,
+          "Authorization": store.userToken,
         },
       })
       transcript.value = response.data.data

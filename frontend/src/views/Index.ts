@@ -38,13 +38,13 @@ export default defineComponent({
           { title: "tower", icon: "tower-observation" },
         ],
       },
-      {
-        title: "simulation advancement type",
-        options: [
-          { title: "continuous", icon: "repeat" },
-          { title: "click to step", icon: "forward-step" },
-        ],
-      },
+      // {
+      //   title: "simulation advancement type",
+      //   options: [
+      //     { title: "continuous", icon: "repeat" },
+      //     { title: "click to step", icon: "forward-step" },
+      //   ],
+      // },
       {
         title: "mode",
         options: [
@@ -62,14 +62,25 @@ export default defineComponent({
     const showJoinLobbyInput = ref(false);
     const lobbyCodeInput = ref("");
     const joinLobbyError = ref("");
+    const scenariosList = ref<{ id: number, name: string }[]>([]);
+    const selectedScenario = ref<number>(null!);
 
     async function handleSelection(value: string) {
       selections.value[currentStep.value] = value;
       if (steps[currentStep.value].title === "scenario") {
         await requestScenarios(value);
       }
+      if (steps[currentStep.value].title === "input type") {
+        store.inputType = value as InputType;
+      }
       if (steps[currentStep.value].title === "mode") {
         await setupSimulationMode(value);
+      }
+      if (steps[currentStep.value].title === "role") {
+        store.userRole = value as Role;
+      }
+      if (steps[currentStep.value].title === "simulation") {
+        selectedScenario.value = scenariosList.value.find(scenario => scenario.name === value)?.id!;
       }
       if (currentStep.value < steps.length - 1) {
         currentStep.value++;
@@ -83,80 +94,48 @@ export default defineComponent({
           "Authorization": store.userToken,
         },
       });
-      const scenariosList = response.data.data.map((item: { name: string }) => item.name) as string[];
+      scenariosList.value = response.data.data
       const simulationStep = steps.find(step => step.title === "simulation");
       if (simulationStep) {
-        simulationStep.options = scenariosList.map(name => ({
-          title: name,
-          icon: "circle-play",
-        }));
+        simulationStep.options = scenariosList.value
+          .slice()
+          .sort((a, b) => b.name.localeCompare(a.name))
+          .map(scenario => ({
+            title: scenario.name,
+            icon: "circle-play",
+          }));
       }
     }
 
     async function setupSimulationMode(mode: string) {
       const response = await axios.post("http://localhost:8080/post-simulation", {
-        scenario_id: 1,
+        scenario_id: selectedScenario.value,
         mode,
+        role: store.userRole,
+        input_type: store.inputType,
       }, {
         headers: {
           "Authorization": store.userToken,
         },
       });
+      store.simulationInput = response.data.data.steps[0]
+      store.simulationOutline = response.data.data.steps[1]
 
-      store.simulationInput = response.data.data.steps[0];
-      store.simulationOutline = response.data.data.steps[1];
       store.lobbyCode = response.data.data.lobby_code;
       store.simulationId = response.data.data.simulation.id;
+      if (mode === "multiplayer") store.isMultiplayer = true;
 
-      if (mode === "multiplayer" && store.lobbyCode) {
-        const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${store.lobbyCode}`);
-        store.isMultiplayer = true;
-        store.isPlayerInLobby = true;
+      router.push({ name: "simulation" });
 
-        socket.onopen = () => {
-          console.log("WebSocket connection established.");
-          socket.send(store.userToken)
-        };
-
-        socket.onmessage = (event) => {
-          console.log("Message from server:", event.data);
-        };
-
-        socket.onerror = (error) => {
-          console.error("WebSocket error:", error);
-        };
-
-        socket.onclose = () => {
-          store.isPlayerInLobby = false;
-          console.log("WebSocket connection closed.");
-        };
-      }
     }
 
     async function joinLobby() {
       joinLobbyError.value = "";
       if (!lobbyCodeInput.value) return;
-
-      try {
-        console.log(lobbyCodeInput.value);
-        const socket = new WebSocket(`ws://localhost:8080/simulation-lobby?lobby=${lobbyCodeInput.value}`);
-        socket.onopen = () => {
-          console.log("WebSocket connection established.");
-          socket.send(store.userToken);
-        };
-        router.push({ name: "simulation" });
-      } catch (error) {
-        joinLobbyError.value = "Lobby not found or already full";
-      }
-    }
-
-    const isComplete = computed(() => selections.value.length === steps.length);
-
-    watch(isComplete, () => {
-      store.inputType = selections.value[0] as InputType;
-      store.userRole = selections.value[3] as Role;
+      store.isMultiplayer = true;
+      store.lobbyCode = lobbyCodeInput.value;
       router.push({ name: "simulation" });
-    });
+    }
 
     onMounted(() => {
       store.inputType = null;
@@ -170,7 +149,6 @@ export default defineComponent({
       steps,
       selections,
       currentStep,
-      isComplete,
       showSelectionFlow,
       showJoinLobbyInput,
       lobbyCodeInput,

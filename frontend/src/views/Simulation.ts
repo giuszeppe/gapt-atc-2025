@@ -24,12 +24,13 @@ export default defineComponent({
     const dragIndex = ref<number | null>(null)
 
     const store = useStore();
-    const userRole = store.userRole;
-    const simulationId = store.simulationId;
-    const inputType = store.inputType;
-    const simulationOutline = store.simulationOutline;
-    const simulationInput = store.simulationInput;
+    const userRole = ref(store.userRole);
+    const simulationId = ref(store.simulationId);
+    const inputType = ref(store.inputType);
+    const simulationOutline = ref(store.simulationOutline);
+    const simulationInput = ref(store.simulationInput);
     const socket = ref<WebSocket | null>(null);
+    const isLoading = ref<boolean>(true);
 
     const currentStepIndex = ref<number>(0);
     const isUserTurn = ref<boolean>(true);
@@ -43,15 +44,34 @@ export default defineComponent({
 
         socket.value.onopen = () => {
           console.log("WebSocket connection established.");
-          if(socket.value ){
+          if (socket.value) {
             socket.value.send(store.userToken)
           }
         };
 
-        socket.value.onmessage = async (event) => {
-          const text = await event.data.text();
-          const jsonData = JSON.parse(text);
-          console.log("Message from server:", jsonData);
+        socket.value.onmessage = (event) => {
+          if (event.data instanceof Blob) {
+            event.data.text().then(text => {
+              console.log("MESSAGE RECEIVED FROM SERVER ")
+              const message = JSON.parse(text);
+              if (message.type == 'init') {
+                simulationId.value = message.content.simulation_id;
+                userRole.value = message.content.role;
+                inputType.value = message.content.input_type;
+                simulationInput.value = message.content.steps;
+                simulationOutline.value = message.content.extended_steps;
+                leftPanelMessages.value = [...message.content.messages]
+                currentStepIndex.value = leftPanelMessages.value.length;
+                isLoading.value = false;
+              } else if (message.type == 'text') {
+                leftPanelMessages.value.push(message);
+                currentStepIndex.value++;
+                isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
+                console.log("inside websocket", message);
+                handleBlocks();
+              }
+            });
+          }
         };
 
         socket.value.onerror = (error) => {
@@ -61,27 +81,12 @@ export default defineComponent({
         socket.value.onclose = () => {
           console.log("WebSocket connection closed.");
         };
+      } else {
+        userRole.value = store.userRole;
+        await initAfterLoading();
       }
 
-      if (inputType === "block") {
-        const initialStep = testOutputSteps.value[currentStepIndex.value];
-        if (initialStep && initialStep.role === userRole) {
-          wordBlocks.value = initialStep.text.trim().split(/\s+/);
-        }
-      }
-
-      const scenarioJson = await fetch("/test.json");
-      const scenarioData = await scenarioJson.json();
-      rightPanelSteps.value = scenarioData.simulations.takeoff[0].steps;
-      synonyms.value = scenarioData.synonyms || {};
-
-      const chatJson = await fetch("/test_output.json");
-      const chatData = await chatJson.json();
-
-      testOutputSteps.value = chatData.simulations.takeoff[0].steps;
-      stepCount.value = testOutputSteps.value.length;
-
-      autoRespond();
+      if (!store.isMultiplayer) autoRespond();
       window.addEventListener("beforeunload", handleBeforeUnload);
     });
 
@@ -93,11 +98,36 @@ export default defineComponent({
       store.isPlayerInLobby = false;
     }
 
-    watch(leftPanelMessages.value, async (newVal) => {
-      if (newVal.length === stepCount.value) {
+    async function initAfterLoading() {
+      const scenarioJson = await fetch("/test.json");
+      const scenarioData = await scenarioJson.json(); // to be removed once backend sends the synonyms
+      rightPanelSteps.value = simulationOutline.value;
+      synonyms.value = scenarioData.synonyms || {};
+      testOutputSteps.value = simulationInput.value;
+      stepCount.value = testOutputSteps.value.length;
+
+      handleBlocks()
+    }
+
+    function handleBlocks() {
+      if (inputType.value === "block") {
+        const initialStep = testOutputSteps.value[currentStepIndex.value];
+        if (initialStep && initialStep.role === userRole.value) {
+          wordBlocks.value = initialStep.text.trim().split(/\s+/);
+        }
+      }
+    }
+
+    watch(isLoading, async (newVal) => {
+      await initAfterLoading()
+    })
+
+    watch(currentStepIndex, async (newVal) => {
+      console.log("LEFT PANEL MESSAGES", newVal);
+      if (newVal === stepCount.value) {
         await axios.post(
           "http://localhost:8080/end-simulation", {
-          simulation_id: simulationId,
+          simulation_id: simulationId.value,
           messages: leftPanelMessages.value,
         }, {
           headers: {
@@ -110,21 +140,21 @@ export default defineComponent({
 
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
-      if (!step || step.role !== userRole) return;
+      if (!step || step.role !== userRole.value) return;
 
       let inputText = "";
 
-      if (inputType != "block") {
+      if (inputType.value != "block") {
         inputText = playerInput.value.trim();
         if (!inputText) return;
-      } else if (inputType === "block") {
+      } else if (inputType.value === "block") {
         inputText = selectedWords.value.join(" ").trim();
         if (!inputText) return;
       }
 
       const formattedText = formatUserInput(inputText, step.text);
       const object: ChatMessage = {
-        role: userRole,
+        role: userRole.value,
         type: "text",
         content: formattedText,
       };
@@ -133,7 +163,6 @@ export default defineComponent({
 
       if (socket.value) {
         const msg = JSON.stringify(object);
-        console.log("Sending message to server:", msg);
         socket.value.send(msg);
       }
 
@@ -142,22 +171,24 @@ export default defineComponent({
       wordBlocks.value = [];
 
       currentStepIndex.value++;
+      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
 
-      if (inputType === "block") {
+      if (inputType.value === "block") {
         const nextStep = testOutputSteps.value[currentStepIndex.value];
-        if (nextStep && nextStep.role === userRole) {
+        if (nextStep && nextStep.role === userRole.value) {
           wordBlocks.value = nextStep.text.trim().split(/\s+/);
         } else {
           wordBlocks.value = [];
         }
       }
-      autoRespond();
+
+      if (!store.isMultiplayer) autoRespond();
     };
 
     function autoRespond() {
       while (
         testOutputSteps.value[currentStepIndex.value] &&
-        testOutputSteps.value[currentStepIndex.value].role !== userRole
+        testOutputSteps.value[currentStepIndex.value].role !== userRole.value
       ) {
         const step = testOutputSteps.value[currentStepIndex.value];
         const content = formatUserInput(step.text, step.text);
@@ -168,10 +199,9 @@ export default defineComponent({
         });
         currentStepIndex.value++;
       }
+      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
 
-      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole;
-
-      if (isUserTurn.value && inputType === "block") {
+      if (isUserTurn.value && inputType.value === "block") {
         const step = testOutputSteps.value[currentStepIndex.value];
         if (step) {
           wordBlocks.value = shuffleArray(step.text.trim().split(/\s+/));
@@ -225,7 +255,6 @@ export default defineComponent({
 
             replayAudio((await base64ToAudioBuffer(base64)));
           }
-
         });
       } else {
         start();
@@ -398,6 +427,8 @@ export default defineComponent({
       selectedWords,
       showEndModal,
       selectedWordIndexes,
+      lobbyCode: store.lobbyCode,
+      isMultiplayer: store.isMultiplayer,
       toggleWordSelection,
       toggleListening,
       handlePlayerInput,

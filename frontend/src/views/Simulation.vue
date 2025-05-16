@@ -17,7 +17,7 @@
         <template v-if="inputType === 'text' || inputType === 'speech'">
           <input v-model="playerInput" @keyup.enter="handlePlayerInput"
             placeholder="Type your message and press Enter..." />
-          <button @click="toggleListening" v-if="inputType == 'speech'">
+          <button @click="toggleListening" v-if="inputType == 'speech'" :disabled="!isUserTurn">
             <font-awesome-icon icon="fa-solid fa-microphone" />
             {{ isListening ? 'Stop' : 'Speak' }}
           </button>
@@ -40,8 +40,7 @@
                 {{ word }}
               </div>
             </div>
-
-            <button class="submit-button" @click="handlePlayerInput">Submit</button>
+            <button class="submit-button" @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
           </div>
         </template>
 
@@ -49,6 +48,9 @@
     </div>
 
     <div class="right-panel">
+      <div v-if="lobbyCode">LOBBY CODE: {{ lobbyCode }}</div>
+      {{ isUserTurn }}
+
       <div class="chat-container">
         <div v-for="(step, index) in rightPanelSteps" :key="'right-' + index"
           :class="['chat-message', step.role === userRole ? 'right' : 'left']">

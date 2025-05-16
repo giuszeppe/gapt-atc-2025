@@ -139,7 +139,7 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 	addClientToLobby(lobby, client)
 
 	// send existing messages to client
-	initMsg.Messages = make([]WebsocketMessage, len(lobby.Messages))
+	initMsg.Messages = []WebsocketMessage{}
 	for _, message := range lobby.Messages {
 		initMsg.Messages = append(initMsg.Messages, WebsocketMessage{
 			Type:    "text",

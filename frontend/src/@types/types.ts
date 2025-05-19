@@ -1,6 +1,6 @@
 export interface SelectionItem {
     title: string;
-    options: { title: string; icon: string; }[];
+    options: { title: string; icon: string; tooltip: string; }[];
 }
 
 export interface SimulationItem {

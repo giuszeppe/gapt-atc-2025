@@ -2,6 +2,7 @@
   <div class="selection-flow">
     <div v-if="!showSelectionFlow" class="welcome-buttons">
       <template v-if="!showJoinLobbyInput">
+        <button class="option-button" @click="showUserGuide">User guide</button>
         <button class="option-button" @click="showSelectionFlow = true">Start Simulation</button>
         <button class="option-button" @click="showJoinLobbyInput = true">Join Lobby</button>
         <button class="option-button" @click="viewTranscripts">View Transcripts</button>

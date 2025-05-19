@@ -3,7 +3,7 @@
     <span class="title">{{ 'select ' + selectionItem.title }}</span>
 
     <div class="selections">
-      <selection-card v-for="option in selectionItem.options" :key="option.title" :title="option.title"
+      <selection-card v-for="option in selectionItem.options" :key="option.title" :title="option.title" :tooltip="option.tooltip"
         :icon="option.icon" :isSelected="selected === option.title" @select="handleSelection"></selection-card>
     </div>
   </div>

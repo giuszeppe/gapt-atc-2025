@@ -5,6 +5,7 @@ export default defineComponent({
   props: {
     title: { type: String, required: true },
     icon: { type: String, required: true },
+    tooltip: { type: String, required: true },
     isSelected: { type: Boolean, default: false },
   },
   emits: ["select"],

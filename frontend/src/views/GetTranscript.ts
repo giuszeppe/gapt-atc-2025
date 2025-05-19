@@ -22,7 +22,6 @@ export default defineComponent({
         },
       })
       transcript.value = response.data.data
-      console.log(transcript.value)
     })
 
     return {

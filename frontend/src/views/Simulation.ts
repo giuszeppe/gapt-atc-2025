@@ -137,6 +137,55 @@ export default defineComponent({
       }
     });
 
+    function isUserInputValid(userInput: string, expectedInput: string): boolean {
+      const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
+      console.log("EXPECTED WORDS", expectedWords);
+      const synonymsMap = synonyms.value;
+
+      const rawWords = userInput.trim().split(/\s+/);
+      const normalizedWords: string[] = [];
+
+      for (let i = 0; i < rawWords.length; i++) {
+        const oneWord = normalizeWord(rawWords[i]);
+        const twoWord =
+          i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
+        const threeWord =
+          i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
+
+        if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
+          normalizedWords.push(threeWord);
+          i += 2;
+          continue;
+        }
+
+        if (twoWord && matchesAnySynonym(twoWord, synonymsMap)) {
+          normalizedWords.push(twoWord);
+          i += 1;
+          continue;
+        }
+
+        normalizedWords.push(oneWord);
+      }
+
+      if (normalizedWords.length !== expectedWords.length) return false;
+
+      for (let i = 0; i < expectedWords.length; i++) {
+        const expected = expectedWords[i];
+        const actual = normalizedWords[i];
+        const expectedSynonyms = synonymsMap[expected] || [];
+
+        if (
+          actual !== expected &&
+          !expectedSynonyms.includes(actual) &&
+          levenshteinDistance(actual, expected) > 1
+        ) {
+          return false;
+        }
+      }
+
+      return true;
+    }
+
     const handlePlayerInput = () => {
       const step = testOutputSteps.value[currentStepIndex.value];
       if (!step || step.role !== userRole.value) return;
@@ -152,6 +201,15 @@ export default defineComponent({
       }
 
       const formattedText = formatUserInput(inputText, step.text);
+      if (!isUserInputValid(inputText, step.text)) {
+        leftPanelMessages.value.push({
+          role: userRole.value,
+          type: "text",
+          content: formattedText,
+        });
+        return;
+      }
+
       const object: ChatMessage = {
         role: userRole.value,
         type: "text",
@@ -161,8 +219,7 @@ export default defineComponent({
       leftPanelMessages.value.push(object);
 
       if (socket.value) {
-        const msg = JSON.stringify(object);
-        socket.value.send(msg);
+        socket.value.send(JSON.stringify(object));
       }
 
       playerInput.value = "";
@@ -182,6 +239,7 @@ export default defineComponent({
       }
 
       if (!store.isMultiplayer) autoRespond();
+
     };
 
     function autoRespond() {
@@ -266,7 +324,6 @@ export default defineComponent({
       }
     }
 
-
     // #region TEXT
     function formatUserInput(userInput: string, expectedInput: string): string {
       const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
@@ -314,7 +371,10 @@ export default defineComponent({
           const expectedSynonyms = synonymsMap[expected] || [];
 
           if (userWord === expected || expectedSynonyms.includes(userWord) || levenshteinDistance(userWord, expected) <= 1) {
-            formattedText += `${original} `;
+            const corrected = (userWord !== expected && levenshteinDistance(userWord, expected) <= 1)
+              ? expected
+              : original;
+            formattedText += `${corrected} `;
             expectedIndex = j + 1;
             matched = true;
             break;

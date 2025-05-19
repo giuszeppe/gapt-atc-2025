@@ -14,17 +14,17 @@ export default defineComponent({
       {
         title: "input type",
         options: [
-          { title: "block", icon: "trowel-bricks" },
-          { title: "text", icon: "comments" },
-          { title: "speech", icon: "microphone" },
+          { title: "block", icon: "trowel-bricks", tooltip: "Use a visual block-based editor to construct your input step by step." },
+          { title: "text", icon: "comments", tooltip: "Type your instructions or responses as plain text." },
+          { title: "speech", icon: "microphone", tooltip: "Speak your input using your device's microphone for voice recognition." },
         ],
       },
       {
         title: "scenario",
         options: [
-          { title: "takeoff", icon: "plane-departure" },
-          { title: "enroute", icon: "plane" },
-          { title: "landing", icon: "plane-arrival" },
+          { title: "takeoff", icon: "plane-departure", tooltip: "Practice communication and procedures for aircraft takeoff scenarios." },
+          { title: "enroute", icon: "plane", tooltip: "Simulate scenarios that occur while the aircraft is enroute between airports." },
+          { title: "landing", icon: "plane-arrival", tooltip: "Experience communication and actions required during aircraft landing." },
         ],
       },
       {
@@ -34,22 +34,15 @@ export default defineComponent({
       {
         title: "role",
         options: [
-          { title: "aircraft", icon: "plane" },
-          { title: "tower", icon: "tower-observation" },
+          { title: "aircraft", icon: "plane", tooltip: "Take the role of the pilot, responding to ATC instructions and managing the aircraft." },
+          { title: "tower", icon: "tower-observation", tooltip: "Act as the tower controller, issuing instructions and managing air traffic." },
         ],
       },
-      // {
-      //   title: "simulation advancement type",
-      //   options: [
-      //     { title: "continuous", icon: "repeat" },
-      //     { title: "click to step", icon: "forward-step" },
-      //   ],
-      // },
       {
         title: "mode",
         options: [
-          { title: "singleplayer", icon: "user" },
-          { title: "multiplayer", icon: "user-group" },
+          { title: "singleplayer", icon: "user", tooltip: "Play alone, the system will act as the counterpart." },
+          { title: "multiplayer", icon: "user-group", tooltip: "Create a lobby to play with another user in real time." },
         ],
       },
     ]);
@@ -103,8 +96,13 @@ export default defineComponent({
           .map(scenario => ({
             title: scenario.name,
             icon: "circle-play",
+            tooltip: `Scenario: ${scenario.name}`,
           }));
       }
+    }
+
+    function showUserGuide(){
+      router.push({ name: "user-guide" });
     }
 
     async function setupSimulationMode(mode: string) {
@@ -159,6 +157,7 @@ export default defineComponent({
       joinLobby,
       handleSelection,
       viewTranscripts,
+      showUserGuide,
     };
   }
 });

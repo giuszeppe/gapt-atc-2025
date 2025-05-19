@@ -12,7 +12,6 @@
             <div v-html="message.content"></div>
           </div>
         </div>
-
       </div>
 
       <VoiceVisualizer :volume="volume" v-if="inputType == 'speech' && isListening" />

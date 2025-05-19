@@ -4,6 +4,7 @@ const Simulation = () => import('../views/Simulation.vue');
 const Transcripts = () => import('../views/Transcripts.vue');
 const GetTranscript = () => import('../views/GetTranscript.vue');
 const Login = () => import('../views/Login.vue');
+const UserGuide = () => import('../views/UserGuide.vue');
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -34,7 +35,11 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: Login,
-
+    },
+    {
+      path: '/user-guide',
+      name: 'user-guide',
+      component: UserGuide,
     }
   ],
 })

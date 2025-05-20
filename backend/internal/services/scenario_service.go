@@ -1,7 +1,6 @@
 package services
 
 import (
-	"fmt"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/encoder"
 	"github.com/giuszeppe/gatp-atc-2025/backend/internal/stores"
 	"log/slog"
@@ -19,7 +18,6 @@ func HandleGetScenario(logger *slog.Logger, scenarioStore stores.ScenarioStore) 
 				return
 			}
 			encoder.Encode(w, r, 200, scenarios, logger)
-
 		},
 	)
 }
@@ -58,8 +56,6 @@ func HandlePostSimulation(logger *slog.Logger, scenarioStore stores.ScenarioStor
 
 			token := r.Header.Get("Authorization")
 			user, err := tokenStore.GetUserByToken(token)
-			fmt.Println("Token: ", token)
-			fmt.Println(tokenStore.View())
 			if err != nil {
 				encoder.EncodeError(w, 401, err, err.Error(), logger)
 			}

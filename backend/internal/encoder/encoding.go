@@ -14,6 +14,7 @@ type APIResponse struct {
 }
 
 func Encode[T any](w http.ResponseWriter, r *http.Request, status int, v T, logger *slog.Logger) {
+	logger.Info("Response:", slog.String("url", r.URL.String()), slog.Int("status", status))
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	response := APIResponse{

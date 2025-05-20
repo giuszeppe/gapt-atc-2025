@@ -1,6 +1,7 @@
 package api
 
 import (
+	"fmt"
 	"github.com/rs/cors"
 	"log/slog"
 	"net/http"
@@ -41,11 +42,14 @@ func Run(
 	userStore *stores.UserStore,
 	scenarioStore *stores.ScenarioStore,
 ) error {
-	logger := slog.New(slog.NewJSONHandler(os.Stdout, nil))
+	// Open logfile
+	logFile, err := os.OpenFile("gatp.log", os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	logger := slog.New(slog.NewJSONHandler(logFile, nil))
 	srv := NewServer(logger, tokenStore, userStore, scenarioStore)
 
-	logger.Info("Serving on" + getenv("APP_URL"))
-	err := http.ListenAndServe(getenv("APP_URL"), srv)
+	logger.Info("Serving on " + getenv("APP_URL"))
+	fmt.Println("Serving on " + getenv("APP_URL"))
+	err = http.ListenAndServe(getenv("APP_URL"), srv)
 	if err != nil {
 		return err
 	}

@@ -3,7 +3,6 @@ package stores
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 )
 
 type Transcript struct {
@@ -71,13 +70,11 @@ func (s *ScenarioStore) View(scenarioType string) ([]Scenario, error) {
 	scenarioMap := make(map[int]*Scenario)
 	for rows.Next() {
 		var scenario Scenario
-		var step Step
 
 		if err := rows.Scan(&scenario.ID, &scenario.Name, &scenario.Type); err != nil {
 			return []Scenario{}, err
 		}
 		// Check if scenario is already in map
-		fmt.Println(scenario, step)
 		if _, exists := scenarioMap[scenario.ID]; !exists {
 			scenarioMap[scenario.ID] = &scenario
 		}
@@ -150,6 +147,11 @@ func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType,
 	}
 
 	var id int
+	var lobbyValue *string
+	lobbyValue = &lobbyCode
+	if lobbyCode == "" {
+		lobbyValue = nil
+	}
 	err := s.db.QueryRow(
 		query,
 		scenarioId,
@@ -159,7 +161,7 @@ func (s *ScenarioStore) StoreSimulation(scenarioId, userId int, role, inputType,
 		mode,
 		towerId, // assuming same user for tower and aircraft
 		aircraftId,
-		lobbyCode,
+		lobbyValue,
 	).Scan(&id)
 
 	if err != nil {

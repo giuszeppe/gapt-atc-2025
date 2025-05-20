@@ -34,6 +34,12 @@ export default defineComponent({
     const currentStepIndex = ref<number>(0);
     const isUserTurn = ref<boolean>(true);
 
+    const selectedWords = ref<{
+      word: string;
+      originalIndex: number;
+    }[]>([]);
+    const selectedWordsIndexes = ref<number[]>([]);
+
     const synonyms = ref<Record<string, string[]>>({});
 
     onMounted(async () => {
@@ -51,7 +57,6 @@ export default defineComponent({
         socket.value.onmessage = (event) => {
           if (event.data instanceof Blob) {
             event.data.text().then(text => {
-              console.log("MESSAGE RECEIVED FROM SERVER ")
               const message = JSON.parse(text);
               if (message.type == 'init') {
                 simulationId.value = message.content.simulation_id;
@@ -66,7 +71,6 @@ export default defineComponent({
                 leftPanelMessages.value.push(message);
                 currentStepIndex.value++;
                 isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
-                console.log("inside websocket", message);
                 handleBlocks();
               }
             });
@@ -111,6 +115,7 @@ export default defineComponent({
     function handleBlocks() {
       if (inputType.value === "block") {
         const initialStep = testOutputSteps.value[currentStepIndex.value];
+        console.log(initialStep)
         if (initialStep && initialStep.role === userRole.value) {
           wordBlocks.value = initialStep.text.trim().split(/\s+/);
         }
@@ -122,7 +127,6 @@ export default defineComponent({
     })
 
     watch(currentStepIndex, async (newVal) => {
-      console.log("LEFT PANEL MESSAGES", newVal);
       if (newVal === stepCount.value) {
         await axios.post(
           "http://localhost:8080/end-simulation", {
@@ -139,7 +143,6 @@ export default defineComponent({
 
     function isUserInputValid(userInput: string, expectedInput: string): boolean {
       const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
-      console.log("EXPECTED WORDS", expectedWords);
       const synonymsMap = synonyms.value;
 
       const rawWords = userInput.trim().split(/\s+/);
@@ -223,7 +226,6 @@ export default defineComponent({
       }
 
       playerInput.value = "";
-      selectedWords.value = [];
       wordBlocks.value = [];
 
       currentStepIndex.value++;
@@ -238,8 +240,10 @@ export default defineComponent({
         }
       }
 
-      if (!store.isMultiplayer) autoRespond();
+      selectedWords.value = [];
+      selectedWordsIndexes.value = [];
 
+      if (!store.isMultiplayer) autoRespond();
     };
 
     function autoRespond() {
@@ -313,7 +317,6 @@ export default defineComponent({
             float32Array.set(channelData);
             const uint8Array = new Uint8Array(float32Array.buffer);
             const base64 = uint8ToBase64(uint8Array);
-            console.log("BASE&$", base64);
 
             socket.value.send(JSON.stringify({ type: "audio", content: base64 }));
 
@@ -443,14 +446,9 @@ export default defineComponent({
       dragIndex.value = null
     }
 
-    const selectedWords = ref<{
-      word: string;
-      originalIndex: number;
-    }[]>([]);
-    const selectedWordsIndexes = ref<number[]>([]);
-
     function selectWord(index: number) {
       const word = wordBlocks.value[index];
+      console.log(selectedWordsIndexes.value.includes(index))
       if (!selectedWordsIndexes.value.includes(index)) {
         selectedWordsIndexes.value.push(index);
         selectedWords.value.push({ word, originalIndex: index });
@@ -470,7 +468,6 @@ export default defineComponent({
       }
     }
 
-
     function shuffleArray<T>(array: T[]): T[] {
       const shuffled = array.slice();
       for (let i = shuffled.length - 1; i > 0; i--) {
@@ -480,14 +477,12 @@ export default defineComponent({
       return shuffled;
     }
 
-    const selectedWordIndexes = ref<number[]>([]);
-
     function toggleWordSelection(index: number) {
-      const idx = selectedWordIndexes.value.indexOf(index);
+      const idx = selectedWordsIndexes.value.indexOf(index);
       if (idx !== -1) {
-        selectedWordIndexes.value.splice(idx, 1);
+        selectedWordsIndexes.value.splice(idx, 1);
       } else {
-        selectedWordIndexes.value.push(index);
+        selectedWordsIndexes.value.push(index);
       }
     }
 
@@ -507,7 +502,6 @@ export default defineComponent({
       wordBlocks,
       selectedWords,
       showEndModal,
-      selectedWordIndexes,
       lobbyCode: store.lobbyCode,
       isMultiplayer: store.isMultiplayer,
       selectedWordsIndexes,

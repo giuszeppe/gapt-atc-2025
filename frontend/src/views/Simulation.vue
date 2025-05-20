@@ -23,7 +23,7 @@
           <button v-if="inputType === 'speech'" :disabled="!isUserTurn" @mousedown="startListening"
             @mouseup="stopListening" @mouseleave="stopListening">
             <font-awesome-icon icon="fa-solid fa-microphone" />
-            {{ isListening ? 'Release to stop' : 'Push to speak' }}
+            {{ isListening ? 'Release to stop' : 'Push to talk' }}
           </button>
 
           <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>

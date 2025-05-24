@@ -25,7 +25,6 @@
             <font-awesome-icon icon="fa-solid fa-microphone" />
             {{ isListening ? 'Release to stop' : 'Push to talk' }}
           </button>
-
           <button @click="handlePlayerInput" :disabled="!isUserTurn">Send</button>
         </template>
 

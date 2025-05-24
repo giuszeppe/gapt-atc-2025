@@ -64,12 +64,15 @@ export default defineComponent({
                 inputType.value = message.content.input_type;
                 simulationInput.value = message.content.steps;
                 simulationOutline.value = message.content.extended_steps;
-                leftPanelMessages.value = [...message.content.messages]
+                leftPanelMessages.value = [...message.content.messages];
                 currentStepIndex.value = leftPanelMessages.value.length;
+                isUserTurn.value = simulationInput.value[currentStepIndex.value]?.role === userRole.value;
                 isLoading.value = false;
               } else if (message.type == 'text') {
                 leftPanelMessages.value.push(message);
-                currentStepIndex.value++;
+                if (!message.content.includes("<span class='wrong-word'>")) {
+                  currentStepIndex.value++;
+                }
                 isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
                 handleBlocks();
               }
@@ -115,7 +118,6 @@ export default defineComponent({
     function handleBlocks() {
       if (inputType.value === "block") {
         const initialStep = testOutputSteps.value[currentStepIndex.value];
-        console.log(initialStep)
         if (initialStep && initialStep.role === userRole.value) {
           wordBlocks.value = initialStep.text.trim().split(/\s+/);
         }
@@ -204,14 +206,6 @@ export default defineComponent({
       }
 
       const formattedText = formatUserInput(inputText, step.text);
-      if (!isUserInputValid(inputText, step.text)) {
-        leftPanelMessages.value.push({
-          role: userRole.value,
-          type: "text",
-          content: formattedText,
-        });
-        return;
-      }
 
       const object: ChatMessage = {
         role: userRole.value,
@@ -221,9 +215,10 @@ export default defineComponent({
 
       leftPanelMessages.value.push(object);
 
-      if (socket.value) {
-        socket.value.send(JSON.stringify(object));
-      }
+      if (socket.value) socket.value.send(JSON.stringify(object));
+      isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
+
+      if (!isUserInputValid(inputText, step.text)) return;
 
       playerInput.value = "";
       wordBlocks.value = [];
@@ -448,7 +443,6 @@ export default defineComponent({
 
     function selectWord(index: number) {
       const word = wordBlocks.value[index];
-      console.log(selectedWordsIndexes.value.includes(index))
       if (!selectedWordsIndexes.value.includes(index)) {
         selectedWordsIndexes.value.push(index);
         selectedWords.value.push({ word, originalIndex: index });

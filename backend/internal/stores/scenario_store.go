@@ -10,9 +10,10 @@ type Transcript struct {
 }
 
 type Message struct {
-	Id   int    `json:"id"`
-	Text string `json:"content"`
-	Role string `json:"role"` // 'tower', 'aircraft'
+	Id      int    `json:"id"`
+	Text    string `json:"content"`
+	Role    string `json:"role"` // 'tower', 'aircraft'
+	IsValid bool   `json:"is_valid"`
 }
 
 type Simulation struct {
@@ -224,15 +225,15 @@ func (s *ScenarioStore) DoesLobbyCodeExist(code string) (bool, error) {
 }
 
 func (s *ScenarioStore) addMessagesToSimulation(simulationId int, messages []Message) error {
-	query := `INSERT INTO transcripts (text,role,simulation_id) VALUES`
+	query := `INSERT INTO transcripts (text,role,simulation_id, is_valid) VALUES`
 	values := []any{}
 
 	for idx, message := range messages {
-		values = append(values, message.Text, message.Role, simulationId)
+		values = append(values, message.Text, message.Role, simulationId, message.IsValid)
 		if idx == 0 {
-			query += `(?,?,?)`
+			query += `(?,?,?,?)`
 		} else {
-			query += `,(?,?,?)`
+			query += `,(?,?,?,?)`
 		}
 	}
 	query += ";"
@@ -263,7 +264,7 @@ func (s *ScenarioStore) EndSimulation(scenarioId int, messages []Message) error 
 */
 
 func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*Transcript, error) {
-	query := `SELECT t.id, t.text, t.role, s.name, s.type, t.simulation_id FROM transcripts t
+	query := `SELECT t.id, t.text, t.role, s.name, s.type, t.simulation_id, t.is_valid FROM transcripts t
     LEFT JOIN simulations ON simulations.id = t.simulation_id
     LEFT JOIN main.scenarios s on simulations.scenario_id = s.id`
 
@@ -279,7 +280,7 @@ func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*
 		var scenarioType string
 		var scenarioName string // here I am assuming scenario names are unique
 		var simulationId int
-		if err := rows.Scan(&message.Id, &message.Text, &message.Role, &scenarioName, &scenarioType, &simulationId); err != nil {
+		if err := rows.Scan(&message.Id, &message.Text, &message.Role, &scenarioName, &scenarioType, &simulationId, &message.IsValid); err != nil {
 			return nil, nil
 		}
 		if _, ok := transcripts[scenarioType]; !ok {
@@ -296,7 +297,7 @@ func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*
 	return transcripts, nil
 }
 func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcript, error) {
-	query := `SELECT id,text,role FROM transcripts WHERE simulation_id = ?`
+	query := `SELECT id,text,role, is_valid FROM transcripts WHERE simulation_id = ?`
 
 	messages := []Message{}
 	stmt, err := s.db.Prepare(query)
@@ -315,7 +316,7 @@ func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcrip
 	for rows.Next() {
 		found = true
 		var message Message
-		if err := rows.Scan(&message.Id, &message.Text, &message.Role); err != nil {
+		if err := rows.Scan(&message.Id, &message.Text, &message.Role, &message.IsValid); err != nil {
 			return Transcript{}, err
 		}
 		messages = append(messages, message)

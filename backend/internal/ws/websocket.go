@@ -148,6 +148,7 @@ func UpgradeConnectionToLobbyWebsocket(logger *slog.Logger, w http.ResponseWrite
 			Type:    "text",
 			Content: json.RawMessage(message.Text),
 			Role:    message.Role,
+			IsValid: message.IsValid,
 		})
 	}
 
@@ -237,6 +238,7 @@ type WebsocketMessage struct {
 	Type    string          `json:"type"`
 	Content json.RawMessage `json:"content"`
 	Role    string          `json:"role"`
+	IsValid bool            `json:"is_valid"`
 }
 
 func broadcastToLobby(lobby *Lobby, data []byte, sender *Client, logger *slog.Logger) {
@@ -250,8 +252,9 @@ func broadcastToLobby(lobby *Lobby, data []byte, sender *Client, logger *slog.Lo
 
 	if wsMsg.Type == "text" {
 		lobby.Messages = append(lobby.Messages, stores.Message{
-			Role: wsMsg.Role,
-			Text: string(wsMsg.Content),
+			Role:    wsMsg.Role,
+			Text:    string(wsMsg.Content),
+			IsValid: wsMsg.IsValid,
 		})
 		logger.Debug("Lobby broadcasted", "message", string(wsMsg.Content))
 	}

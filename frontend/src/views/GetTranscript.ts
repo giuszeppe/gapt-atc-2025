@@ -13,6 +13,7 @@ export default defineComponent({
   setup(props) {
     const store = useStore()
     const transcript = ref<any>("")
+    const simulationOutline = ref<[]>([])
 
     onMounted(async () => {
       console.log(props.id)
@@ -21,7 +22,9 @@ export default defineComponent({
           "Authorization": store.userToken,
         },
       })
-      transcript.value = response.data.data
+      console.log(response.data.data)
+      transcript.value = response.data.data.transcripts
+      simulationOutline.value = response.data.data.steps
     })
 
     return {

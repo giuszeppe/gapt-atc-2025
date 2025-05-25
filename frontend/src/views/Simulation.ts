@@ -65,12 +65,13 @@ export default defineComponent({
                 simulationInput.value = message.content.steps;
                 simulationOutline.value = message.content.extended_steps;
                 leftPanelMessages.value = [...message.content.messages];
-                currentStepIndex.value = leftPanelMessages.value.length;
+                currentStepIndex.value = leftPanelMessages.value.filter((msg: ChatMessage) => msg.is_valid).length;
                 isUserTurn.value = simulationInput.value[currentStepIndex.value]?.role === userRole.value;
                 isLoading.value = false;
               } else if (message.type == 'text') {
                 leftPanelMessages.value.push(message);
-                if (!message.content.includes("<span class='wrong-word'>")) {
+                console.log("Received message:", message.is_valid);
+                if (message.is_valid) {
                   currentStepIndex.value++;
                 }
                 isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
@@ -105,14 +106,14 @@ export default defineComponent({
     }
 
     async function initAfterLoading() {
-      const scenarioJson = await fetch("/test.json");
-      const scenarioData = await scenarioJson.json(); // to be removed once backend sends the synonyms
+      const response = await fetch("/synonyms.json");
+      const synonymsData = await response.json();
       rightPanelSteps.value = simulationOutline.value;
-      synonyms.value = scenarioData.synonyms || {};
+      synonyms.value = synonymsData.synonyms || {};
       testOutputSteps.value = simulationInput.value;
       stepCount.value = testOutputSteps.value.length;
 
-      handleBlocks()
+      handleBlocks();
     }
 
     function handleBlocks() {
@@ -206,11 +207,13 @@ export default defineComponent({
       }
 
       const formattedText = formatUserInput(inputText, step.text);
+      const isValid = isUserInputValid(inputText, step.text);
 
       const object: ChatMessage = {
         role: userRole.value,
         type: "text",
         content: formattedText,
+        is_valid: isValid,
       };
 
       leftPanelMessages.value.push(object);
@@ -218,7 +221,7 @@ export default defineComponent({
       if (socket.value) socket.value.send(JSON.stringify(object));
       isUserTurn.value = testOutputSteps.value[currentStepIndex.value]?.role === userRole.value;
 
-      if (!isUserInputValid(inputText, step.text)) return;
+      if (!isValid) return;
 
       playerInput.value = "";
       wordBlocks.value = [];
@@ -252,6 +255,7 @@ export default defineComponent({
           role: step.role,
           content: content,
           type: "text",
+          is_valid: true,
         });
         currentStepIndex.value++;
       }

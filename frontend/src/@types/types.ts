@@ -19,6 +19,7 @@ export interface ChatMessage {
     role: Role;
     type: ChannelMode;
     content: string;
+    is_valid: boolean;
 }
 
 export type InputType = "block" | "text" | "speech";

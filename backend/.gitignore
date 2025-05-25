@@ -2,3 +2,4 @@
 example.db
 backend.exe
 backend
+*.log

@@ -281,7 +281,7 @@ func (s *ScenarioStore) GetGroupedTranscripts() (map[string]map[string]map[int]*
 		var scenarioName string // here I am assuming scenario names are unique
 		var simulationId int
 		if err := rows.Scan(&message.Id, &message.Text, &message.Role, &scenarioName, &scenarioType, &simulationId, &message.IsValid); err != nil {
-			return nil, nil
+			return nil, err
 		}
 		if _, ok := transcripts[scenarioType]; !ok {
 			transcripts[scenarioType] = make(map[string]map[int]*Transcript)
@@ -305,6 +305,7 @@ func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcrip
 		return Transcript{}, err
 	}
 	defer stmt.Close()
+
 	rows, err := stmt.Query(simulationId)
 	if err != nil {
 		return Transcript{}, err
@@ -312,7 +313,6 @@ func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcrip
 	defer rows.Close()
 
 	found := false
-
 	for rows.Next() {
 		found = true
 		var message Message
@@ -322,7 +322,7 @@ func (s *ScenarioStore) GetTranscriptBySimulationId(simulationId int) (Transcrip
 		messages = append(messages, message)
 	}
 	if !found {
-		return Transcript{}, errors.New("Not found")
+		return Transcript{}, errors.New("Not transcripts found")
 	}
 	return Transcript{Messages: messages}, nil
 
@@ -403,4 +403,36 @@ func (s *ScenarioStore) UpdateSimulationRoleIds(simulationId, userId int, role s
 		return err
 	}
 	return nil
+}
+
+func (s *ScenarioStore) GetScenarioStepsForSimulationId(simulationId int) ([]Step, error) {
+	query := `
+		SELECT est.idx, est.text, est.role
+		FROM simulations s
+		LEFT JOIN extended_steps est on s.scenario_id=est.scenario_id 
+		WHERE s.id= ?;`
+	stmt, err := s.db.Prepare(query)
+	if err != nil {
+		return []Step{}, err
+	}
+	defer stmt.Close()
+
+	rows, err := stmt.Query(simulationId)
+	if err != nil {
+		return []Step{}, err
+	}
+	defer rows.Close()
+
+	res := []Step{}
+
+	for rows.Next() {
+		var extendedStep Step
+		if err := rows.Scan(&extendedStep.Index, &extendedStep.Text, &extendedStep.Role); err != nil {
+			return []Step{}, err
+		}
+		res = append(res, extendedStep)
+
+	}
+
+	return res, nil
 }

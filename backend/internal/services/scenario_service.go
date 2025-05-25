@@ -134,6 +134,12 @@ func HandleGetTranscripts(logger *slog.Logger, scenarioStore stores.ScenarioStor
 		},
 	)
 }
+
+type GetTranscriptResponse struct {
+	Transcript stores.Transcript `json:"transcripts"`
+	Steps      []stores.Step     `json:"steps"`
+}
+
 func HandleGetTranscript(logger *slog.Logger, scenarioStore stores.ScenarioStore) http.Handler {
 	return http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
@@ -144,14 +150,27 @@ func HandleGetTranscript(logger *slog.Logger, scenarioStore stores.ScenarioStore
 				return
 			}
 
-			// fetch scenario steps
+			// fetch transcript steps
 			transcripts, err := scenarioStore.GetTranscriptBySimulationId(simulationId)
 			if err != nil {
 				logger.Error(err.Error())
 				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error(), logger)
 				return
 			}
-			encoder.Encode(w, r, http.StatusOK, transcripts, logger)
+
+			// fetch extended steps
+			extendedSteps, err := scenarioStore.GetScenarioStepsForSimulationId(simulationId)
+			if err != nil {
+				logger.Error(err.Error())
+				encoder.EncodeError(w, http.StatusInternalServerError, err, err.Error(), logger)
+				return
+			}
+
+			res := GetTranscriptResponse{
+				Transcript: transcripts,
+				Steps:      extendedSteps,
+			}
+			encoder.Encode(w, r, http.StatusOK, res, logger)
 		},
 	)
 }

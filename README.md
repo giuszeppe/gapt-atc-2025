@@ -17,8 +17,8 @@ This project is an Air Traffic Control (ATC) simulation platform designed for tr
 ## Prerequisites
 
 - Go (1.20+)
-- Node.js & npm
-- SQLite 
+- Node.js (21.1.0+) & npm(10.4.0+)
+- SQLite3
 
 ## Setup
 

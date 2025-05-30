@@ -24,13 +24,11 @@ export default defineComponent({
     }
 
     onMounted(async () => {
-      console.log(props.id)
       const response = await axios.get(`http://localhost:8080/get-transcripts/${props.id}`, {
         headers: {
           "Authorization": store.userToken,
         },
       })
-      console.log(response.data.data)
       transcript.value = response.data.data.transcripts
       simulationOutline.value = response.data.data.steps
     })

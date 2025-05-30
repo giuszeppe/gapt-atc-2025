@@ -125,7 +125,7 @@ export default defineComponent({
       if (inputType.value === "block") {
         const initialStep = testOutputSteps.value[currentStepIndex.value];
         if (initialStep && initialStep.role === userRole.value) {
-          wordBlocks.value = initialStep.text.trim().split(/\s+/);
+          wordBlocks.value = shuffleArray(initialStep.text.trim().split(/\s+/));
         }
       }
     }
@@ -150,51 +150,61 @@ export default defineComponent({
     });
 
     function isUserInputValid(userInput: string, expectedInput: string): boolean {
-      const expectedWords = expectedInput.trim().split(/\s+/).map(normalizeWord);
-      const synonymsMap = synonyms.value;
+      const expectedWords = tokenizeAndNormalizeInput(expectedInput, synonyms.value);
+      const inputWords = tokenizeAndNormalizeInput(userInput, synonyms.value);
 
-      const rawWords = userInput.trim().split(/\s+/);
-      const normalizedWords: string[] = [];
-
-      for (let i = 0; i < rawWords.length; i++) {
-        const oneWord = normalizeWord(rawWords[i]);
-        const twoWord =
-          i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
-        const threeWord =
-          i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
-
-        if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
-          normalizedWords.push(threeWord);
-          i += 2;
-          continue;
-        }
-
-        if (twoWord && matchesAnySynonym(twoWord, synonymsMap)) {
-          normalizedWords.push(twoWord);
-          i += 1;
-          continue;
-        }
-
-        normalizedWords.push(oneWord);
-      }
-
-      if (normalizedWords.length !== expectedWords.length) return false;
+      if (expectedWords.length !== inputWords.length) return false;
 
       for (let i = 0; i < expectedWords.length; i++) {
-        const expected = expectedWords[i];
-        const actual = normalizedWords[i];
-        const expectedSynonyms = synonymsMap[expected] || [];
-
-        if (
-          actual !== expected &&
-          !expectedSynonyms.includes(actual) &&
-          levenshteinDistance(actual, expected) > 1
-        ) {
+        if (expectedWords[i] !== inputWords[i] && levenshteinDistance(expectedWords[i], inputWords[i]) > 1) {
           return false;
         }
       }
 
       return true;
+    }
+
+    function expandSynonymsMap(originalMap: Record<string, string[]>): Record<string, string> {
+      const reverseMap: Record<string, string> = {};
+
+      for (const canonical in originalMap) {
+        const synonymsSet = new Set([canonical, ...originalMap[canonical]]);
+        const commonCanonical = normalizePhrase(canonical);
+
+        for (const synonym of synonymsSet) {
+          reverseMap[normalizePhrase(synonym)] = commonCanonical;
+        }
+      }
+
+      return reverseMap;
+    }
+
+    function tokenizeAndNormalizeInput(input: string, synonymMap: Record<string, string[]>): string[] {
+      const reverseMap = expandSynonymsMap(synonymMap);
+      const words = input.trim().toLowerCase().split(/\s+/);
+      const tokens: string[] = [];
+
+      let i = 0;
+      while (i < words.length) {
+        let matchFound = false;
+
+        for (let len = Math.min(10, words.length - i); len > 0; len--) {
+          const phrase = normalizePhrase(words.slice(i, i + len).join(" "));
+          if (reverseMap[phrase]) {
+            tokens.push(reverseMap[phrase]);
+            i += len;
+            matchFound = true;
+            break;
+          }
+        }
+
+        if (!matchFound) {
+          tokens.push(normalizeWord(words[i]));
+          i++;
+        }
+      }
+
+      return tokens;
     }
 
     const handlePlayerInput = () => {
@@ -258,7 +268,7 @@ export default defineComponent({
         const content = formatUserInput(step.text, step.text);
         leftPanelMessages.value.push({
           role: step.role,
-          content: content,
+          content: step.text,
           type: "text",
           is_valid: true,
         });
@@ -337,32 +347,42 @@ export default defineComponent({
       const synonymsMap = synonyms.value;
 
       const rawWords = userInput.trim().split(/\s+/);
-      const normalizedWords: string[] = [];
       const originalWords: string[] = [];
+      const normalizedWords: string[] = [];
 
-      for (let i = 0; i < rawWords.length; i++) {
-        const oneWord = normalizeWord(rawWords[i]);
-        const twoWord =
-          i + 1 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]}`) : null;
-        const threeWord =
-          i + 2 < rawWords.length ? normalizeWord(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`) : null;
+      const reverseSynonymMap: Record<string, string> = {};
+      for (const [canonical, syns] of Object.entries(synonymsMap)) {
+        for (const s of syns) {
+          reverseSynonymMap[normalizeWord(s)] = canonical;
+        }
+        reverseSynonymMap[normalizeWord(canonical)] = canonical;
+      }
 
-        if (threeWord && matchesAnySynonym(threeWord, synonymsMap)) {
-          normalizedWords.push(threeWord);
-          originalWords.push(`${rawWords[i]} ${rawWords[i + 1]} ${rawWords[i + 2]}`);
-          i += 2;
-          continue;
+      let i = 0;
+      while (i < rawWords.length) {
+        let matched = false;
+
+        for (let len = 10; len > 0; len--) {
+          const phrase = rawWords.slice(i, i + len).join(" ");
+          const normalizedPhrase = normalizeWord(phrase);
+          const canonical = reverseSynonymMap[normalizedPhrase];
+
+          if (canonical) {
+            normalizedWords.push(canonical);
+            originalWords.push(phrase);
+            i += len;
+            matched = true;
+            break;
+          }
         }
 
-        if (twoWord && matchesAnySynonym(twoWord, synonymsMap)) {
-          normalizedWords.push(twoWord);
-          originalWords.push(`${rawWords[i]} ${rawWords[i + 1]}`);
-          i += 1;
-          continue;
+        if (!matched) {
+          const word = normalizeWord(rawWords[i]);
+          const canonical = reverseSynonymMap[word] || word;
+          normalizedWords.push(canonical);
+          originalWords.push(rawWords[i]);
+          i++;
         }
-
-        normalizedWords.push(oneWord);
-        originalWords.push(rawWords[i]);
       }
 
       let formattedText = "";
@@ -377,7 +397,11 @@ export default defineComponent({
           const expected = expectedWords[j];
           const expectedSynonyms = synonymsMap[expected] || [];
 
-          if (userWord === expected || expectedSynonyms.includes(userWord) || levenshteinDistance(userWord, expected) <= 1) {
+          if (
+            userWord === expected ||
+            expectedSynonyms.includes(userWord) ||
+            levenshteinDistance(userWord, expected) <= 1
+          ) {
             const corrected = (userWord !== expected && levenshteinDistance(userWord, expected) <= 1)
               ? expected
               : original;
@@ -406,6 +430,11 @@ export default defineComponent({
     function normalizeWord(word: string): string {
       return word.replace(/[.,]/g, "").toLowerCase();
     }
+
+    function normalizePhrase(phrase: string): string {
+      return phrase.replace(/[.,]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
+    }
+
 
     function levenshteinDistance(a: string, b: string): number {
       const matrix: number[][] = [];

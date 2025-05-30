@@ -3,27 +3,43 @@
     "roger": ["wilco", "affirmative"],
     "ryr4735": [
       "ryanair4735",
+      "ryanair 4735",
+      "ryanair four seven three five",
       "ryr 4735",
       "ryr-4735",
       "ryanair 4735",
       "romeo yankee romeo four seven three five",
       "romeo yankee romeo 4735"
     ],
-    "lh123": [
-      "lufthansa123",
-      "lh 123",
-      "lh-123",
-      "lufthansa 123",
-      "lima hotel one two three",
-      "lima hotel 123"
+    "dlh1307": [
+      "lufthansa1307",
+      "lufthansa 1307",
+      "lufthansa one three zero seven",
+      "dlh 1307",
+      "dlh-1307",
+      "delta lima hotel one three zero seven",
+      "delta lima hotel 1307"
     ],
-    "kmm123": [
-      "kmm 123",
-      "kmm-123",
-      "kmm one two three",
-      "kilo mike mike one two three",
-      "kilo mike mike 123"
+    "kmm102": [
+      "kmm 102",
+      "kmm-102",
+      "kmm one zero two",
+      "kilo mike mike one zero two",
+      "kilo mike mike 102",
+      "kmm one zero two"
     ],
+    "kmm514": [
+      "kmm 514",
+      "kmm-514",
+      "kilo mike mike five one four",
+      "kilo mike mike 514",
+      "kmm five one four"
+    ],
+    "fl": ["flight level"],
+    "fl70": ["flight level seventy", "flight level 70"],
+    "fl150": ["flight level one five zero", "flight level 150"],
+    "fl380": ["flight level three eight zero", "flight level 380"],
+    "fl340": ["flight level three four zero", "flight level 340"],
     "alpha": ["a"],
     "a": ["alpha"],
     "bravo": ["b"],

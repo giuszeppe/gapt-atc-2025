@@ -1,6 +1,8 @@
+import type { SimulationStep } from "@/@types/types"
 import { useStore } from "@/store/store"
 import axios from "axios"
 import { defineComponent, onMounted, ref } from "vue"
+import { useRouter } from "vue-router"
 
 export default defineComponent({
   name: "GetTranscript",
@@ -13,7 +15,13 @@ export default defineComponent({
   setup(props) {
     const store = useStore()
     const transcript = ref<any>("")
-    const simulationOutline = ref<[]>([])
+    const simulationOutline = ref<SimulationStep[]>()
+
+    const router = useRouter()
+
+    function goHome() {
+      router.push('/')
+    }
 
     onMounted(async () => {
       console.log(props.id)
@@ -29,6 +37,8 @@ export default defineComponent({
 
     return {
       transcript,
+      simulationOutline,
+      goHome,
     }
   }
 })

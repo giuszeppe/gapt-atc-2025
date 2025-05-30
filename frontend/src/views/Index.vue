@@ -11,6 +11,7 @@
       <div v-if="showJoinLobbyInput" class="join-lobby-input">
         <input v-model="lobbyCodeInput" placeholder="Enter lobby code" class="option-button" />
         <button @click="joinLobby" class="option-button">Join</button>
+        <button @click="showJoinLobbyInput = !showJoinLobbyInput" class="option-button">Go back home</button>
         <div v-if="joinLobbyError" class="error-text">{{ joinLobbyError }}</div>
       </div>
     </div>
@@ -57,16 +58,5 @@
   gap: 20px;
   width: 100%;
   height: 100%;
-}
-
-.option-button {
-  width: 200px;
-  height: 50px;
-  background-color: transparent;
-  border: 3px solid @primary-yellow;
-  color: @primary-yellow;
-  border-radius: 5px;
-  font-size: 18px;
-  cursor: pointer;
 }
 </style>

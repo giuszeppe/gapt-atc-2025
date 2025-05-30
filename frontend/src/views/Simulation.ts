@@ -5,6 +5,7 @@ import { useSpeechToText } from "@/composables/useSpeechToText";
 import VoiceVisualizer from "@/components/VoiceVisualizer.vue";
 import axios from "axios";
 import SimulationEndModal from "@/components/SimulationEndModal.vue";
+import router from "@/router/router";
 
 export default defineComponent({
   name: "Simulation",
@@ -103,6 +104,10 @@ export default defineComponent({
 
     function handleBeforeUnload() {
       store.isPlayerInLobby = false;
+    }
+
+    function goHome() {
+      router.push('/')
     }
 
     async function initAfterLoading() {
@@ -504,6 +509,7 @@ export default defineComponent({
       isMultiplayer: store.isMultiplayer,
       selectedWordsIndexes,
       toggleWordSelection,
+      goHome,
       startListening,
       stopListening,
       handlePlayerInput,

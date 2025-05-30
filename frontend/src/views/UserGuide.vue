@@ -52,7 +52,8 @@
       </div>
     </div>
 
-    <RouterLink to="/" class="back-button">Back to Home</RouterLink>
+    <button @click="$router.push('/')" class="option-button mt-10">Go back home</button>
+
   </div>
 </template>
 

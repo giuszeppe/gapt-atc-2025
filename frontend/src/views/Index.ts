@@ -101,7 +101,7 @@ export default defineComponent({
       }
     }
 
-    function showUserGuide(){
+    function showUserGuide() {
       router.push({ name: "user-guide" });
     }
 

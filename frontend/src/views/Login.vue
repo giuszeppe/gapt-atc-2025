@@ -53,15 +53,5 @@
       color: fade(@primary-yellow, 60%);
     }
   }
-
-  .option-button {
-    width: 100%;
-    padding: 10px 15px;
-    background-color: transparent;
-    border: 2px solid @primary-yellow;
-    color: @primary-yellow;
-    border-radius: 5px;
-    cursor: pointer;
-  }
 }
 </style>

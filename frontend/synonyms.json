@@ -104,7 +104,6 @@
     "point": ["position", "spot"],
     "frequency": ["channel"],
     "report": ["communicate", "announce"],
-    "departure": ["takeoff", "liftoff"],
     "acknowledges": ["confirms", "responds"],
     "climbing": ["ascending", "gaining altitude"],
     "stand": ["gate", "bay"],
